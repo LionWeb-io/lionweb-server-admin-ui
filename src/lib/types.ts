@@ -10,7 +10,7 @@ export interface Repository {
 
 export interface RepositoryListResponse {
   success: boolean;
-  repositoryNames: string[];
+  repositories: Repository[];
   messages: Array<{
     kind: string;
     message: string;

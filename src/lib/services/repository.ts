@@ -22,7 +22,15 @@ export async function getRepositories(): Promise<RepositoryListResponse> {
         },
       }
     );
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    console.log('Raw API response:', JSON.stringify(data, null, 2));
+    
+    // Pass through the full repository information
+    return {
+      success: data.success,
+      repositories: data.repositories || [],
+      messages: data.messages || []
+    };
   } catch (e) {
     console.error('Error fetching repositories:', e);
     throw new Error(`Failed to fetch repositories: ${e instanceof Error ? e.message : 'Unknown error'}`);
