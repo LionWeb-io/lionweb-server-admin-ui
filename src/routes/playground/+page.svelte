@@ -25,6 +25,48 @@
     e.stopPropagation();
   }
 
+  async function handleFileLoad(file: File) {
+    try {
+      console.log('Loading file:', file.name);
+      const text = await file.text();
+      console.log('File content:', text.substring(0, 500) + '...'); // Log first 500 chars
+      chunk = JSON.parse(text) as SerializationChunk;
+      console.log('Parsed chunk:', {
+        version: chunk.serializationFormatVersion,
+        languages: chunk.languages.length,
+        nodes: chunk.nodes.length,
+        firstNode: chunk.nodes[0] ? {
+          id: chunk.nodes[0].id,
+          classifier: chunk.nodes[0].classifier,
+          properties: chunk.nodes[0].properties.length,
+          containments: chunk.nodes[0].containments.length,
+          references: chunk.nodes[0].references.length,
+          parent: chunk.nodes[0].parent
+        } : null
+      });
+
+      // Log all nodes to understand the structure
+      console.log('All nodes:', chunk.nodes.map(n => ({
+        id: n.id,
+        parent: n.parent,
+        classifier: n.classifier,
+        properties: n.properties.length,
+        containments: n.containments.length,
+        references: n.references.length
+      })));
+
+      // Log root nodes
+      const rootNodes = chunk.nodes.filter(node => !node.parent);
+      console.log('Root nodes:', rootNodes.map(n => n.id));
+
+      error = null;
+    } catch (e) {
+      console.error('Error loading file:', e);
+      error = `Failed to parse file: ${e instanceof Error ? e.message : 'Unknown error'}`;
+      chunk = null;
+    }
+  }
+
   async function handleDrop(e: DragEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -33,22 +75,7 @@
     const files = e.dataTransfer?.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    try {
-      const text = await file.text();
-      chunk = JSON.parse(text) as SerializationChunk;
-      console.log('Loaded chunk:', chunk);
-      if (chunk.nodes.length > 0) {
-        console.log('First node:', chunk.nodes[0]);
-        if (chunk.nodes[0].properties.length > 0) {
-          console.log('First property:', chunk.nodes[0].properties[0]);
-        }
-      }
-      error = null;
-    } catch (e) {
-      error = `Failed to parse file: ${e instanceof Error ? e.message : 'Unknown error'}`;
-      chunk = null;
-    }
+    await handleFileLoad(files[0]);
   }
 
   function toggleNode(nodeId: string) {
@@ -67,7 +94,9 @@
 
   function getChildNodes(nodeId: string): SerializationChunk['nodes'] {
     if (!chunk) return [];
-    return chunk.nodes.filter(node => node.parent === nodeId);
+    const children = chunk.nodes.filter(node => node.parent === nodeId);
+    console.log(`Getting children for node ${nodeId}:`, children.map(n => n.id));
+    return children;
   }
 
   function renderNodeTree(nodeId: string | null, level: number = 0): NodeWithChildren[] {
@@ -77,11 +106,23 @@
       ? chunk.nodes.filter(node => !node.parent) // Root nodes
       : getChildNodes(nodeId);
 
-    return nodes.map(node => ({
-      ...node,
-      level,
-      children: renderNodeTree(node.id, level + 1)
-    }));
+    console.log(`Rendering nodes for parent ${nodeId || 'root'} at level ${level}:`, nodes.map(n => ({
+      id: n.id,
+      parent: n.parent,
+      classifier: n.classifier,
+      properties: n.properties.length,
+      containments: n.containments.length,
+      references: n.references.length
+    })));
+
+    return nodes.map(node => {
+      const children = renderNodeTree(node.id, level + 1);
+      return {
+        ...node,
+        level,
+        children
+      };
+    });
   }
 
   function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
@@ -203,22 +244,11 @@
         accept=".json"
         class="hidden"
         id="fileInput"
-        on:change={(e: Event) => {
+        on:change={async (e: Event) => {
           const target = e.target as HTMLInputElement;
           const files = target.files;
           if (files && files.length > 0) {
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                chunk = JSON.parse(event.target?.result as string) as SerializationChunk;
-                error = null;
-              } catch (e) {
-                error = `Failed to parse file: ${e instanceof Error ? e.message : 'Unknown error'}`;
-                chunk = null;
-              }
-            };
-            reader.readAsText(file);
+            await handleFileLoad(files[0]);
           }
         }}
       />
@@ -304,7 +334,6 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                               {#each node.properties as property}
-                                {@const _ = debugProperty(property)}
                                 <tr>
                                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyLanguage(property)}</td>
                                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyVersion(property)}</td>
@@ -332,7 +361,6 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                               {#each node.references as reference}
-                                {@const _ = debugReference(reference)}
                                 <tr>
                                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceLanguage(reference)}</td>
                                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceVersion(reference)}</td>
@@ -349,7 +377,6 @@
                       <div class="mt-2">
                         <p class="text-sm font-medium text-gray-700">Containments:</p>
                         {#each node.containments as containment}
-                          {@const _ = debugContainment(containment)}
                           <div class="mt-1">
                             <p class="text-sm text-gray-600">
                               {getContainmentKey(containment)} ({getContainmentLanguage(containment)} v{getContainmentVersion(containment)}):
