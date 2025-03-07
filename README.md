@@ -1,13 +1,12 @@
 # LionWeb Repository Admin UI
 
-A modern web interface for managing LionWeb Repositories, built with SvelteKit and TypeScript.
+A simple web interface for managing an instance of the [LionWeb Repository](https://github.com/LionWeb-io/lionweb-repository), built with SvelteKit and TypeScript.
 
 ## Features
 
-- Browse and manage LionWeb repositories
+- Browse LionWeb repositories
 - View and edit repository contents
-- Manage repository users and permissions
-- Modern, responsive UI with TailwindCSS
+- Visualize the content of LionWeb files
 
 ## Development
 
