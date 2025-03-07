@@ -1,22 +1,20 @@
 import type { SerializationChunk } from '@lionweb/core';
 
 export interface Repository {
-  id: string;
-  name: string;
-  description: string;
-  owner: string;
-  createdAt: string;
-  updatedAt: string;
-  nodeCount: number;
-  version: string;
-  languages: string[];
+  repository_name: string;
+  schema_name: string;
+  history: boolean;
+  lionweb_version: string;
+  created?: string;
 }
 
 export interface RepositoryListResponse {
-  repositories: Repository[];
-  total: number;
-  page: number;
-  pageSize: number;
+  success: boolean;
+  repositoryNames: string[];
+  messages: Array<{
+    kind: string;
+    message: string;
+  }>;
 }
 
 export interface CreateRepositoryRequest {

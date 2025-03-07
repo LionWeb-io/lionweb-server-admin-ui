@@ -37,6 +37,13 @@
     try {
       const text = await file.text();
       chunk = JSON.parse(text) as SerializationChunk;
+      console.log('Loaded chunk:', chunk);
+      if (chunk.nodes.length > 0) {
+        console.log('First node:', chunk.nodes[0]);
+        if (chunk.nodes[0].properties.length > 0) {
+          console.log('First property:', chunk.nodes[0].properties[0]);
+        }
+      }
       error = null;
     } catch (e) {
       error = `Failed to parse file: ${e instanceof Error ? e.message : 'Unknown error'}`;
@@ -85,6 +92,95 @@
   function getRootNodeCount(): number {
     if (!chunk) return 0;
     return chunk.nodes.filter(node => !node.parent).length;
+  }
+
+  function renderPropertyValue(property: { value: any }): string {
+    if (property.value === null) return 'null';
+    if (typeof property.value === 'object') return JSON.stringify(property.value);
+    return String(property.value);
+  }
+
+  function renderContainmentValue(containment: { children: string[] }): string {
+    return containment.children.join(', ');
+  }
+
+  function getPropertyKey(property: any): string {
+    return property.property?.key || 'Unknown';
+  }
+
+  function getPropertyLanguage(property: any): string {
+    return property.property?.language || 'Unknown';
+  }
+
+  function getPropertyVersion(property: any): string {
+    return property.property?.version || 'Unknown';
+  }
+
+  function getPropertyValue(property: any): any {
+    return property.value;
+  }
+
+  function getReferenceKey(reference: any): string {
+    return reference.reference?.key || 'Unknown';
+  }
+
+  function getReferenceLanguage(reference: any): string {
+    return reference.reference?.language || 'Unknown';
+  }
+
+  function getReferenceVersion(reference: any): string {
+    return reference.reference?.version || 'Unknown';
+  }
+
+  function getReferenceValues(reference: any): any[] {
+    return reference.values || [];
+  }
+
+  function getContainmentKey(containment: any): string {
+    return containment.containment?.key || 'Unknown';
+  }
+
+  function getContainmentLanguage(containment: any): string {
+    return containment.containment?.language || 'Unknown';
+  }
+
+  function getContainmentVersion(containment: any): string {
+    return containment.containment?.version || 'Unknown';
+  }
+
+  function getContainedNodes(containment: any): SerializationChunk['nodes'] {
+    if (!chunk || !containment.children) return [];
+    return chunk.nodes.filter(node => containment.children.includes(node.id));
+  }
+
+  function debugProperty(property: any) {
+    console.log('Property object:', property);
+    console.log('Property details:', property.property);
+    console.log('Value:', property.value);
+  }
+
+  function getNodeColor(nodeId: string): string {
+    // Generate a consistent hash from the node ID
+    let hash = 0;
+    for (let i = 0; i < nodeId.length; i++) {
+      hash = nodeId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Convert hash to HSL color with high lightness for pastel colors
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 95%)`;
+  }
+
+  function debugReference(reference: any) {
+    console.log('Reference object:', reference);
+    console.log('Reference details:', reference.reference);
+    console.log('Values:', reference.values);
+  }
+
+  function debugContainment(containment: any) {
+    console.log('Containment object:', containment);
+    console.log('Containment details:', containment.containment);
+    console.log('Children:', containment.children);
   }
 </script>
 
@@ -143,45 +239,44 @@
 
   {#if chunk}
     <div class="mt-8">
-      <h2 class="text-xl font-semibold mb-4">File Contents</h2>
+      <h2 class="text-xl font-semibold mb-4">File Contents - Serialization Format Version: {chunk.serializationFormatVersion}</h2>
       
       <div class="space-y-4">
         <div class="bg-white p-4 rounded shadow">
-          <h3 class="font-medium mb-2">Serialization Format Version</h3>
-          <p class="text-gray-700">{chunk.serializationFormatVersion}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded shadow">
           <h3 class="font-medium mb-2">Languages</h3>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                {#each chunk.languages as language}
+          {#if chunk.languages.length === 0}
+            <p class="italic text-gray-500">No languages specified</p>
+          {:else}
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                   <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.key}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.version}</td>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
                   </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  {#each chunk.languages as language}
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.key}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.version}</td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          {/if}
         </div>
 
         <div class="bg-white p-4 rounded shadow">
           <h3 class="font-medium mb-2">Nodes ({chunk.nodes.length}, {getRootNodeCount()} roots)</h3>
           <div class="space-y-2">
             {#each renderNodeTree(null) as node}
-              <div class="border rounded p-2" style="margin-left: {node.level * 20}px">
-                <div class="flex items-center space-x-2">
+              <div class="border rounded p-2" style="margin-left: {node.level * 20}px; background-color: {getNodeColor(node.id)}">
+                <div class="flex items-start space-x-2">
                   {#if hasChildren(node)}
                     <button
-                      class="text-gray-500 hover:text-gray-700"
+                      class="text-gray-500 hover:text-gray-700 mt-1"
                       on:click={() => toggleNode(node.id)}
                     >
                       {expandedNodes.has(node.id) ? '▼' : '▶'}
@@ -195,13 +290,155 @@
                       <p class="text-sm text-gray-600">Classifier: {node.classifier.key} v{node.classifier.version}</p>
                     {/if}
                     {#if node.properties.length > 0}
-                      <p class="text-sm text-gray-600">Properties: {node.properties.length}</p>
-                    {/if}
-                    {#if node.containments.length > 0}
-                      <p class="text-sm text-gray-600">Containments: {node.containments.length}</p>
+                      <div class="mt-2">
+                        <p class="text-sm font-medium text-gray-700">Properties:</p>
+                        <div class="overflow-x-auto">
+                          <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                              <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                              </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                              {#each node.properties as property}
+                                {@const _ = debugProperty(property)}
+                                <tr>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyLanguage(property)}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyVersion(property)}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyKey(property)}</td>
+                                  <td class="px-6 py-4 text-sm text-gray-900">{renderPropertyValue({ value: getPropertyValue(property) })}</td>
+                                </tr>
+                              {/each}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     {/if}
                     {#if node.references.length > 0}
-                      <p class="text-sm text-gray-600">References: {node.references.length}</p>
+                      <div class="mt-2">
+                        <p class="text-sm font-medium text-gray-700">References:</p>
+                        <div class="overflow-x-auto">
+                          <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                              <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Values</th>
+                              </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                              {#each node.references as reference}
+                                {@const _ = debugReference(reference)}
+                                <tr>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceLanguage(reference)}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceVersion(reference)}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceKey(reference)}</td>
+                                  <td class="px-6 py-4 text-sm text-gray-900">{getReferenceValues(reference).length} values</td>
+                                </tr>
+                              {/each}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    {/if}
+                    {#if node.containments.length > 0}
+                      <div class="mt-2">
+                        <p class="text-sm font-medium text-gray-700">Containments:</p>
+                        {#each node.containments as containment}
+                          {@const _ = debugContainment(containment)}
+                          <div class="mt-1">
+                            <p class="text-sm text-gray-600">
+                              {getContainmentKey(containment)} ({getContainmentLanguage(containment)} v{getContainmentVersion(containment)}):
+                              {#if expandedNodes.has(node.id)}
+                                <div class="mt-2 space-y-2">
+                                  {#each getContainedNodes(containment) as childNode}
+                                    <div class="border rounded p-2" style="margin-left: 20px; background-color: {getNodeColor(childNode.id)}">
+                                      <div class="flex items-center space-x-2">
+                                        {#if hasChildren(childNode)}
+                                          <button
+                                            class="text-gray-500 hover:text-gray-700"
+                                            on:click={() => toggleNode(childNode.id)}
+                                          >
+                                            {expandedNodes.has(childNode.id) ? '▼' : '▶'}
+                                          </button>
+                                        {:else}
+                                          <span class="w-4"></span>
+                                        {/if}
+                                        <div>
+                                          <p class="font-medium">ID: {childNode.id}</p>
+                                          {#if childNode.classifier}
+                                            <p class="text-sm text-gray-600">Classifier: {childNode.classifier.key} v{childNode.classifier.version}</p>
+                                          {/if}
+                                          {#if childNode.properties.length > 0}
+                                            <div class="mt-1">
+                                              <p class="text-sm font-medium text-gray-700">Properties:</p>
+                                              <div class="overflow-x-auto">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                  <thead class="bg-gray-50">
+                                                    <tr>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody class="bg-white divide-y divide-gray-200">
+                                                    {#each childNode.properties as property}
+                                                      <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyLanguage(property)}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyVersion(property)}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyKey(property)}</td>
+                                                        <td class="px-6 py-4 text-sm text-gray-900">{renderPropertyValue({ value: getPropertyValue(property) })}</td>
+                                                      </tr>
+                                                    {/each}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            </div>
+                                          {/if}
+                                          {#if childNode.references.length > 0}
+                                            <div class="mt-1">
+                                              <p class="text-sm font-medium text-gray-700">References:</p>
+                                              <div class="overflow-x-auto">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                  <thead class="bg-gray-50">
+                                                    <tr>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Values</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody class="bg-white divide-y divide-gray-200">
+                                                    {#each childNode.references as reference}
+                                                      <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceLanguage(reference)}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceVersion(reference)}</td>
+                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getReferenceKey(reference)}</td>
+                                                        <td class="px-6 py-4 text-sm text-gray-900">{getReferenceValues(reference).length} values</td>
+                                                      </tr>
+                                                    {/each}
+                                                  </tbody>
+                                                </table>
+                                              </div>
+                                            </div>
+                                          {/if}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  {/each}
+                                </div>
+                              {:else}
+                                <span class="text-gray-500">(children: {containment.children.length})</span>
+                              {/if}
+                            </p>
+                          </div>
+                        {/each}
+                      </div>
                     {/if}
                     {#if node.annotations.length > 0}
                       <p class="text-sm text-gray-600">Annotations: {node.annotations.length}</p>
@@ -212,7 +449,7 @@
                   {#each node.children as child}
                     <div class="mt-2">
                       {#each renderNodeTree(child.id, child.level) as grandChild}
-                        <div class="border rounded p-2" style="margin-left: {grandChild.level * 20}px">
+                        <div class="border rounded p-2" style="margin-left: {grandChild.level * 20}px; background-color: {getNodeColor(grandChild.id)}">
                           <div class="flex items-center space-x-2">
                             {#if hasChildren(grandChild)}
                               <button
@@ -230,10 +467,24 @@
                                 <p class="text-sm text-gray-600">Classifier: {grandChild.classifier.key} v{grandChild.classifier.version}</p>
                               {/if}
                               {#if grandChild.properties.length > 0}
-                                <p class="text-sm text-gray-600">Properties: {grandChild.properties.length}</p>
+                                <div class="mt-1">
+                                  <p class="text-sm font-medium text-gray-700">Properties:</p>
+                                  <ul class="list-disc list-inside text-sm text-gray-600">
+                                    {#each grandChild.properties as property}
+                                      <li>{getPropertyKey(property)}: {renderPropertyValue({ value: getPropertyValue(property) })}</li>
+                                    {/each}
+                                  </ul>
+                                </div>
                               {/if}
                               {#if grandChild.containments.length > 0}
-                                <p class="text-sm text-gray-600">Containments: {grandChild.containments.length}</p>
+                                <div class="mt-1">
+                                  <p class="text-sm font-medium text-gray-700">Containments:</p>
+                                  <ul class="list-disc list-inside text-sm text-gray-600">
+                                    {#each grandChild.containments as containment}
+                                      <li>{getContainmentKey(containment)}: {renderContainmentValue(containment)}</li>
+                                    {/each}
+                                  </ul>
+                                </div>
                               {/if}
                               {#if grandChild.references.length > 0}
                                 <p class="text-sm text-gray-600">References: {grandChild.references.length}</p>

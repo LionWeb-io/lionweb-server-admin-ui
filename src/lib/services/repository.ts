@@ -11,11 +11,12 @@ async function handleResponse(response: Response) {
   return response.json();
 }
 
-export async function getRepositories(page: number = 1, pageSize: number = 10): Promise<RepositoryListResponse> {
+export async function getRepositories(): Promise<RepositoryListResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/repositories?page=${page}&pageSize=${pageSize}`,
+      `${API_BASE_URL}/listRepositories`,
       {
+        method: 'POST',
         headers: {
           'Accept': 'application/json',
         },
