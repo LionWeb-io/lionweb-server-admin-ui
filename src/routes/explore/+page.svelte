@@ -4,14 +4,19 @@
   import type { SerializationChunk } from '@lionweb/core';
   import { getPartitions, createPartition } from '$lib/services/repository';
   import { currentSerializationFormatVersion } from '@lionweb/core';
+  import { page } from '$app/stores';
 
-  let repositoryName = 'default';
+  // Define valid serialization format versions
+  const validVersions = ["2023.1", "2024.1"];
+  const DEFAULT_VERSION = "2024.1"; // Most recent version
+
+  let repositoryName = $page.url.searchParams.get('repository') || 'default';
   let partitions: Partition[] = [];
   let loading = false;
   let error: string | null = null;
   let showCreateModal = false;
   let newPartition: SerializationChunk = {
-    serializationFormatVersion: currentSerializationFormatVersion,
+    serializationFormatVersion: DEFAULT_VERSION,
     languages: [],
     nodes: []
   };
@@ -32,22 +37,6 @@
       console.error('Error details:', e);
     } finally {
       loading = false;
-    }
-  }
-
-  async function handleCreatePartition() {
-    try {
-      await createPartition(repositoryName, newPartition);
-      showCreateModal = false;
-      await loadPartitions(); // Reload the list
-      newPartition = {
-        serializationFormatVersion: currentSerializationFormatVersion,
-        languages: [],
-        nodes: []
-      };
-    } catch (e) {
-      error = `Failed to create partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
-      console.error('Error details:', e);
     }
   }
 
@@ -75,40 +64,96 @@
     newPartition.nodes = newPartition.nodes.filter((_, i) => i !== index);
   }
 
-  onMount(() => {
-    loadPartitions();
+  // Helper function to ensure a language is declared
+  function ensureLanguageDeclared(language: string, version: string) {
+    const exists = newPartition.languages.some(l => l.key === language && l.version === version);
+    if (!exists) {
+      newPartition.languages = [...newPartition.languages, { key: language, version }];
+    }
+  }
+
+  // Watch for changes in node classifiers to ensure languages are declared
+  $: {
+    for (const node of newPartition.nodes) {
+      if (node.classifier.language && node.classifier.version) {
+        ensureLanguageDeclared(node.classifier.language, node.classifier.version);
+      }
+    }
+  }
+
+  async function handleCreatePartition() {
+    try {
+      loading = true;
+      error = null;
+      
+      console.log('Starting partition creation with data:', {
+        repositoryName,
+        newPartition: JSON.stringify(newPartition, null, 2)
+      });
+      
+      // Validate the partition data
+      if (!newPartition.nodes.length) {
+        throw new Error('Partition must contain at least one node');
+      }
+
+      // Validate node data
+      for (const node of newPartition.nodes) {
+        if (!node.id) throw new Error('Node ID is required');
+        if (!node.classifier.language) throw new Error('Classifier language is required');
+        if (!node.classifier.version) throw new Error('Classifier version is required');
+        if (!node.classifier.key) throw new Error('Classifier key is required');
+        
+        // Ensure the language is declared
+        ensureLanguageDeclared(node.classifier.language, node.classifier.version);
+      }
+      
+      // Create the partition
+      console.log('Calling createPartition service...');
+      const createdPartition = await createPartition(repositoryName, newPartition);
+      console.log('Partition created successfully:', createdPartition);
+      
+      // Close modal and reset form
+      showCreateModal = false;
+      newPartition = {
+        serializationFormatVersion: DEFAULT_VERSION,
+        languages: [],
+        nodes: []
+      };
+      
+      // Reload the list
+      console.log('Reloading partitions list...');
+      await loadPartitions();
+      
+      // Show success message
+      error = null;
+    } catch (e) {
+      console.error('Error in handleCreatePartition:', e);
+      error = `Failed to create partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+    } finally {
+      loading = false;
+    }
+  }
+
+  onMount(async () => {
+    await loadPartitions();
   });
+
+  $: if ($page.url.searchParams.get('repository') !== repositoryName) {
+    repositoryName = $page.url.searchParams.get('repository') || 'default';
+    loadPartitions();
+  }
 </script>
 
 <div class="bg-white shadow rounded-lg">
   <div class="px-4 py-5 sm:p-6">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Explore Repository</h2>
+      <h2 class="text-2xl font-bold text-gray-900">Exploring Repository {repositoryName}</h2>
       <button
         on:click={() => showCreateModal = true}
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
         Create Partition
       </button>
-    </div>
-
-    <div class="mb-6">
-      <label for="repository-name" class="block text-sm font-medium text-gray-700">Repository Name</label>
-      <div class="mt-1 flex rounded-md shadow-sm">
-        <input
-          type="text"
-          id="repository-name"
-          bind:value={repositoryName}
-          class="flex-1 block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          placeholder="Enter repository name"
-        />
-        <button
-          on:click={loadPartitions}
-          class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Load Partitions
-        </button>
-      </div>
     </div>
 
     {#if loading}
@@ -167,13 +212,16 @@
         <div class="space-y-6">
           <div>
             <label for="version" class="block text-sm font-medium text-gray-700">Serialization Format Version</label>
-            <input
-              type="text"
+            <select
               id="version"
               bind:value={newPartition.serializationFormatVersion}
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
-            />
+            >
+              {#each validVersions as version}
+                <option value={version}>{version}</option>
+              {/each}
+            </select>
           </div>
 
           <div>

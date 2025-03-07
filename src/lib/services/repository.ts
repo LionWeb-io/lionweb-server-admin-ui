@@ -147,25 +147,48 @@ export async function getPartition(repositoryName: string, partitionId: string):
   }
 }
 
-export async function createPartition(repositoryName: string, chunk: SerializationChunk): Promise<void> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/bulk/createPartitions?clientId=lionWebRepoAdminUI&repository=${encodeURIComponent(repositoryName)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(chunk),
-      }
-    );
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error (${response.status}): ${errorText}`);
+export async function createPartition(repositoryName: string, chunk: SerializationChunk): Promise<Partition> {
+  console.log('Creating partition with data:', {
+    repositoryName,
+    chunk: JSON.stringify(chunk, null, 2)
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/bulk/createPartitions?clientId=lionWebRepoAdminUI&repository=${encodeURIComponent(repositoryName)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(chunk),
     }
-  } catch (e) {
-    console.error('Error creating partition:', e);
-    throw new Error(`Failed to create partition: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  );
+
+  const responseData = await response.json();
+  console.log('Create partition response:', responseData);
+
+  if (!response.ok) {
+    throw new Error(responseData.error || 'Failed to create partition');
   }
+
+  if (!responseData.success) {
+    throw new Error('Failed to create partition: ' + (responseData.messages?.[0]?.message || 'Unknown error'));
+  }
+
+  // Extract the partition ID from the response messages
+  const versionMessage = responseData.messages?.find((msg: any) => msg.kind === 'RepoVersion');
+  if (!versionMessage) {
+    throw new Error('No version information found in response');
+  }
+
+  // Create a partition object with the available information
+  const partition: Partition = {
+    id: versionMessage.data.version,
+    name: `Partition ${versionMessage.data.version}`,
+    nodeCount: chunk.nodes.length,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  return partition;
 } 
