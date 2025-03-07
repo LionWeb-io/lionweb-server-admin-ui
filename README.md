@@ -2,6 +2,10 @@
 
 A simple web interface for managing an instance of the [LionWeb Repository](https://github.com/LionWeb-io/lionweb-repository), built with SvelteKit and TypeScript.
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
 ## Features
 
 - Browse LionWeb repositories
