@@ -105,88 +105,96 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
-  <div class="px-4 py-5 sm:p-6">
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Repositories</h2>
-    </div>
+<div class="relative min-h-screen">
+  <!-- Background Logo -->
+  <div class="fixed inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+    <img src="/images/lionweb-logo.png" alt="" class="w-[800px] h-[800px] object-contain" />
+  </div>
 
-    {#if loading}
-      <div class="text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+  <!-- Content -->
+  <div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Repositories</h2>
       </div>
-    {:else if error}
-      <div class="text-center py-12">
-        <p class="text-red-600">{error}</p>
-        <p class="text-sm text-gray-500 mt-2">Please check if the LionWeb Repository server is running at {import.meta.env.VITE_API_BASE_URL}</p>
-      </div>
-    {:else if repositories.length === 0}
-      <div class="text-center py-12">
-        <p class="text-gray-500">No repositories found</p>
-      </div>
-    {:else}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {#each repositories as repository}
-          <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
-            <div class="px-4 py-5 sm:p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.repository_name}</h3>
-              
-              <div class="flex flex-wrap gap-2 mb-4">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {repository.lionweb_version}
-                </span>
-                {#if repository.history}
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    History Enabled
-                  </span>
-                {:else}
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    History Disabled
-                  </span>
-                {/if}
-              </div>
 
-              <div class="flex justify-end space-x-2">
-                <a
-                  href="/explore?repository={repository.repository_name}"
-                  class="inline-flex items-center p-2 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  title="Explore Repository"
-                >
-                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
-                  </svg>
-                  <span class="sr-only">Explore</span>
-                </a>
-                <button
-                  on:click={() => {
-                    repositoryToDelete = repository;
-                    showDeleteConfirm = true;
-                  }}
-                  class="inline-flex items-center p-2 border border-transparent rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  title="Delete Repository"
-                >
-                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="sr-only">Delete</span>
-                </button>
+      {#if loading}
+        <div class="text-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        </div>
+      {:else if error}
+        <div class="text-center py-12">
+          <p class="text-red-600">{error}</p>
+          <p class="text-sm text-gray-500 mt-2">Please check if the LionWeb Repository server is running at {import.meta.env.VITE_API_BASE_URL}</p>
+        </div>
+      {:else if repositories.length === 0}
+        <div class="text-center py-12">
+          <p class="text-gray-500">No repositories found</p>
+        </div>
+      {:else}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {#each repositories as repository}
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+              <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.repository_name}</h3>
+                
+                <div class="flex flex-wrap gap-2 mb-4">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {repository.lionweb_version}
+                  </span>
+                  {#if repository.history}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      History Enabled
+                    </span>
+                  {:else}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      History Disabled
+                    </span>
+                  {/if}
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                  <a
+                    href="/explore?repository={repository.repository_name}"
+                    class="inline-flex items-center p-2 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    title="Explore Repository"
+                  >
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
+                    </svg>
+                    <span class="sr-only">Explore</span>
+                  </a>
+                  <button
+                    on:click={() => {
+                      repositoryToDelete = repository;
+                      showDeleteConfirm = true;
+                    }}
+                    class="inline-flex items-center p-2 border border-transparent rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    title="Delete Repository"
+                  >
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="sr-only">Delete</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
+          {/each}
+        </div>
+      {/if}
 
-    <div class="mt-6 flex justify-center">
-      <button
-        on:click={() => showCreateModal = true}
-        class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-        </svg>
-        Create Repository
-      </button>
+      <div class="mt-6 flex justify-center">
+        <button
+          on:click={() => showCreateModal = true}
+          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+          Create Repository
+        </button>
+      </div>
     </div>
   </div>
 </div>
