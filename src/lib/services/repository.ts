@@ -51,17 +51,28 @@ export async function getRepository(id: string): Promise<Repository> {
   }
 }
 
-export async function createRepository(repository: CreateRepositoryRequest): Promise<Repository> {
+export async function createRepository(repository: { name: string, lionweb_version: string, history: boolean }): Promise<Repository> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/repositories`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(repository),
-    });
-    return handleResponse(response);
+    const response = await fetch(
+      `${API_BASE_URL}/createRepository`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: repository.name,
+          lionweb_version: repository.lionweb_version,
+          history: repository.history
+        }),
+      }
+    );
+    const data = await handleResponse(response);
+    if (!data.success) {
+      throw new Error(data.messages?.[0]?.message || 'Failed to create repository');
+    }
+    return data.repository;
   } catch (e) {
     console.error('Error creating repository:', e);
     throw new Error(`Failed to create repository: ${e instanceof Error ? e.message : 'Unknown error'}`);
@@ -85,14 +96,24 @@ export async function updateRepository(id: string, repository: Partial<Repositor
   }
 }
 
-export async function deleteRepository(id: string): Promise<void> {
+export async function deleteRepository(repositoryName: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/repositories/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error (${response.status}): ${errorText}`);
+    const response = await fetch(
+      `${API_BASE_URL}/deleteRepository`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: repositoryName
+        }),
+      }
+    );
+    const data = await handleResponse(response);
+    if (!data.success) {
+      throw new Error(data.messages?.[0]?.message || 'Failed to delete repository');
     }
   } catch (e) {
     console.error('Error deleting repository:', e);
