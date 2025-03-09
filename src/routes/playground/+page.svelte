@@ -322,28 +322,18 @@
                     {/if}
                     {#if node.properties?.length}
                       <div class="mt-2">
-                        <p class="text-sm font-medium text-gray-700">Properties:</p>
-                        <div class="overflow-x-auto">
-                          <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                              <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                              </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                              {#each node.properties as property}
-                                <tr>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyLanguage(property)}</td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyVersion(property)}</td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyKey(property)}</td>
-                                  <td class="px-6 py-4 text-sm text-gray-900">{renderPropertyValue({ value: getPropertyValue(property) })}</td>
-                                </tr>
-                              {/each}
-                            </tbody>
-                          </table>
+                        <div class="properties-container">
+                          {#each node.properties as property}
+                            <div class="property-row">
+                              <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                {getPropertyLanguage(property)} | {getPropertyVersion(property)} | {getPropertyKey(property)}
+                              </span>
+                              <span class="property-equals">=</span>
+                              <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                {renderPropertyValue({ value: getPropertyValue(property) })}
+                              </span>
+                            </div>
+                          {/each}
                         </div>
                       </div>
                     {/if}
@@ -403,28 +393,18 @@
                                           {/if}
                                           {#if childNode.properties.length > 0}
                                             <div class="mt-1">
-                                              <p class="text-sm font-medium text-gray-700">Properties:</p>
-                                              <div class="overflow-x-auto">
-                                                <table class="min-w-full divide-y divide-gray-200">
-                                                  <thead class="bg-gray-50">
-                                                    <tr>
-                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Language</th>
-                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
-                                                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                                                    </tr>
-                                                  </thead>
-                                                  <tbody class="bg-white divide-y divide-gray-200">
-                                                    {#each childNode.properties as property}
-                                                      <tr>
-                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyLanguage(property)}</td>
-                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyVersion(property)}</td>
-                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getPropertyKey(property)}</td>
-                                                        <td class="px-6 py-4 text-sm text-gray-900">{renderPropertyValue({ value: getPropertyValue(property) })}</td>
-                                                      </tr>
-                                                    {/each}
-                                                  </tbody>
-                                                </table>
+                                              <div class="properties-container">
+                                                {#each childNode.properties as property}
+                                                  <div class="property-row">
+                                                    <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                                      {getPropertyLanguage(property)} | {getPropertyVersion(property)} | {getPropertyKey(property)}
+                                                    </span>
+                                                    <span class="property-equals">=</span>
+                                                    <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                                      {renderPropertyValue({ value: getPropertyValue(property) })}
+                                                    </span>
+                                                  </div>
+                                                {/each}
                                               </div>
                                             </div>
                                           {/if}
@@ -496,12 +476,19 @@
                               {/if}
                               {#if grandChild.properties.length > 0}
                                 <div class="mt-1">
-                                  <p class="text-sm font-medium text-gray-700">Properties:</p>
-                                  <ul class="list-disc list-inside text-sm text-gray-600">
+                                  <div class="properties-container">
                                     {#each grandChild.properties as property}
-                                      <li>{getPropertyKey(property)}: {renderPropertyValue({ value: getPropertyValue(property) })}</li>
+                                      <div class="property-row">
+                                        <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                          {getPropertyLanguage(property)} | {getPropertyVersion(property)} | {getPropertyKey(property)}
+                                        </span>
+                                        <span class="property-equals">=</span>
+                                        <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                          {renderPropertyValue({ value: getPropertyValue(property) })}
+                                        </span>
+                                      </div>
                                     {/each}
-                                  </ul>
+                                  </div>
                                 </div>
                               {/if}
                               {#if grandChild.containments.length > 0}
@@ -537,5 +524,24 @@
 </div>
 
 <style>
-  /* Add any additional styles here */
+  .properties-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .property-row {
+    display: flex;
+    align-items: center;
+  }
+  .property-key {
+    width: fit-content;
+  }
+  .property-equals {
+    width: 30px;
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  .property-value {
+    width: fit-content;
+  }
 </style> 
