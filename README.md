@@ -8,7 +8,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Features
 
-- Browse LionWeb repositories
+- Manage LionWeb repositories: list them, add them, delete them
 - View and edit repository contents
 - Visualize the content of LionWeb files
 
