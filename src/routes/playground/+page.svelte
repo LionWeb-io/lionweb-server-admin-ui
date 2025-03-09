@@ -93,14 +93,14 @@
   };
 
   function getChildNodes(nodeId: string): SerializationChunk['nodes'] {
-    if (!chunk) return [];
+    if (!chunk?.nodes) return [];
     const children = chunk.nodes.filter(node => node.parent === nodeId);
     console.log(`Getting children for node ${nodeId}:`, children.map(n => n.id));
     return children;
   }
 
   function renderNodeTree(nodeId: string | null, level: number = 0): NodeWithChildren[] {
-    if (!chunk) return [];
+    if (!chunk?.nodes) return [];
     
     const nodes = nodeId === null 
       ? chunk.nodes.filter(node => !node.parent) // Root nodes
@@ -110,28 +110,29 @@
       id: n.id,
       parent: n.parent,
       classifier: n.classifier,
-      properties: n.properties.length,
-      containments: n.containments.length,
-      references: n.references.length
+      properties: n.properties?.length || 0,
+      containments: n.containments?.length || 0,
+      references: n.references?.length || 0
     })));
 
-    return nodes.map(node => {
-      const children = renderNodeTree(node.id, level + 1);
-      return {
-        ...node,
-        level,
-        children
-      };
-    });
+    return nodes.map(node => ({
+      ...node,
+      level,
+      properties: node.properties || [],
+      containments: node.containments || [],
+      references: node.references || [],
+      annotations: node.annotations || [],
+      children: renderNodeTree(node.id, level + 1)
+    }));
   }
 
   function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
-    if (!chunk) return false;
+    if (!chunk?.nodes) return false;
     return chunk.nodes.some(n => n.parent === node.id);
   }
 
   function getRootNodeCount(): number {
-    if (!chunk) return 0;
+    if (!chunk?.nodes) return 0;
     return chunk.nodes.filter(node => !node.parent).length;
   }
 
@@ -146,51 +147,51 @@
   }
 
   function getPropertyKey(property: any): string {
-    return property.property?.key || 'Unknown';
+    return property?.property?.key || 'Unknown';
   }
 
   function getPropertyLanguage(property: any): string {
-    return property.property?.language || 'Unknown';
+    return property?.property?.language || 'Unknown';
   }
 
   function getPropertyVersion(property: any): string {
-    return property.property?.version || 'Unknown';
+    return property?.property?.version || 'Unknown';
   }
 
   function getPropertyValue(property: any): any {
-    return property.value;
+    return property?.value;
   }
 
   function getReferenceKey(reference: any): string {
-    return reference.reference?.key || 'Unknown';
+    return reference?.reference?.key || 'Unknown';
   }
 
   function getReferenceLanguage(reference: any): string {
-    return reference.reference?.language || 'Unknown';
+    return reference?.reference?.language || 'Unknown';
   }
 
   function getReferenceVersion(reference: any): string {
-    return reference.reference?.version || 'Unknown';
+    return reference?.reference?.version || 'Unknown';
   }
 
   function getReferenceValues(reference: any): any[] {
-    return reference.values || [];
+    return reference?.values || [];
   }
 
   function getContainmentKey(containment: any): string {
-    return containment.containment?.key || 'Unknown';
+    return containment?.containment?.key || 'Unknown';
   }
 
   function getContainmentLanguage(containment: any): string {
-    return containment.containment?.language || 'Unknown';
+    return containment?.containment?.language || 'Unknown';
   }
 
   function getContainmentVersion(containment: any): string {
-    return containment.containment?.version || 'Unknown';
+    return containment?.containment?.version || 'Unknown';
   }
 
   function getContainedNodes(containment: any): SerializationChunk['nodes'] {
-    if (!chunk || !containment.children) return [];
+    if (!chunk || !containment?.children) return [];
     return chunk.nodes.filter(node => containment.children.includes(node.id));
   }
 
@@ -274,7 +275,7 @@
       <div class="space-y-4">
         <div class="bg-white p-4 rounded shadow">
           <h3 class="font-medium mb-2">Languages</h3>
-          {#if chunk.languages.length === 0}
+          {#if !chunk?.languages?.length}
             <p class="italic text-gray-500">No languages specified</p>
           {:else}
             <div class="overflow-x-auto">
@@ -288,8 +289,8 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                   {#each chunk.languages as language}
                     <tr>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.key}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language.version}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.key || 'Unknown'}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.version || 'Unknown'}</td>
                     </tr>
                   {/each}
                 </tbody>
@@ -299,7 +300,7 @@
         </div>
 
         <div class="bg-white p-4 rounded shadow">
-          <h3 class="font-medium mb-2">Nodes ({chunk.nodes.length}, {getRootNodeCount()} roots)</h3>
+          <h3 class="font-medium mb-2">Nodes ({chunk?.nodes?.length || 0}, {getRootNodeCount()} roots)</h3>
           <div class="space-y-2">
             {#each renderNodeTree(null) as node}
               <div class="border rounded p-2" style="margin-left: {node.level * 20}px; background-color: {getNodeColor(node.id)}">
@@ -315,11 +316,11 @@
                     <span class="w-4"></span>
                   {/if}
                   <div>
-                    <p class="font-medium">ID: {node.id}</p>
+                    <p class="font-medium">ID: {node.id || 'Unknown'}</p>
                     {#if node.classifier}
-                      <p class="text-sm text-gray-600">Classifier: {node.classifier.key} v{node.classifier.version}</p>
+                      <p class="text-sm text-gray-600">Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version || 'Unknown'}</p>
                     {/if}
-                    {#if node.properties.length > 0}
+                    {#if node.properties?.length}
                       <div class="mt-2">
                         <p class="text-sm font-medium text-gray-700">Properties:</p>
                         <div class="overflow-x-auto">
