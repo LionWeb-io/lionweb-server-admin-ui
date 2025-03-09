@@ -9,6 +9,7 @@
   let showCreateModal = false;
   let showDeleteConfirm = false;
   let repositoryToDelete: Repository | null = null;
+  let createError: string | null = null;
   
   // Form data for new repository
   let newRepository = {
@@ -43,6 +44,18 @@
     try {
       loading = true;
       error = null;
+      createError = null;
+      
+      // Basic validation
+      if (!newRepository.name.trim()) {
+        createError = 'Repository name is required';
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9_-]+$/.test(newRepository.name)) {
+        createError = 'Repository name can only contain letters, numbers, underscores, and hyphens';
+        return;
+      }
       
       await createRepository({
         name: newRepository.name,
@@ -61,7 +74,7 @@
       // Reload the list
       await loadRepositories();
     } catch (e) {
-      error = `Failed to create repository: ${e instanceof Error ? e.message : 'Unknown error'}`;
+      createError = e instanceof Error ? e.message : 'Failed to create repository';
       console.error('Error details:', e);
     } finally {
       loading = false;
@@ -116,7 +129,7 @@
         {#each repositories as repository}
           <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
             <div class="px-4 py-5 sm:p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.name}</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.repository_name}</h3>
               
               <div class="flex flex-wrap gap-2 mb-4">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -135,7 +148,7 @@
 
               <div class="flex justify-end space-x-2">
                 <a
-                  href="/explore?repository={repository.name}"
+                  href="/explore?repository={repository.repository_name}"
                   class="inline-flex items-center p-2 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   title="Explore Repository"
                 >
@@ -189,6 +202,20 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Create New Repository</h3>
           <div class="mt-4">
             <form on:submit|preventDefault={handleCreateRepository}>
+              {#if createError}
+                <div class="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-red-700">{createError}</p>
+                    </div>
+                  </div>
+                </div>
+              {/if}
               <div class="space-y-4">
                 <div>
                   <label for="name" class="block text-sm font-medium text-gray-700">Repository Name</label>
@@ -198,8 +225,11 @@
                     id="name"
                     bind:value={newRepository.name}
                     required
+                    pattern="[\w\-]+"
+                    title="Repository name can only contain letters, numbers, underscores, and hyphens"
                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
+                  <p class="mt-1 text-xs text-gray-500">Only letters, numbers, underscores, and hyphens are allowed</p>
                 </div>
                 <div>
                   <label for="lionweb_version" class="block text-sm font-medium text-gray-700">LionWeb Version</label>

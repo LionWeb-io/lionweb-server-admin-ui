@@ -1,6 +1,14 @@
 import type { Repository, RepositoryListResponse, CreateRepositoryRequest, Partition, PartitionListResponse, BulkListPartitionsResponse, CreatePartitionRequest } from '$lib/types';
 import type { SerializationChunk } from '@lionweb/core';
 
+// Server response type
+interface ServerRepository {
+  name: string;
+  lionweb_version: string;
+  history: boolean;
+  schema_name?: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
 
 async function handleResponse(response: Response) {
@@ -25,10 +33,17 @@ export async function getRepositories(): Promise<RepositoryListResponse> {
     const data = await handleResponse(response);
     console.log('Raw API response:', JSON.stringify(data, null, 2));
     
-    // Pass through the full repository information
+    // Map the server response to our expected format
+    const mappedRepositories = (data.repositories as ServerRepository[])?.map(repo => ({
+      repository_name: repo.name,
+      lionweb_version: repo.lionweb_version,
+      history: repo.history,
+      schema_name: repo.schema_name || ''
+    })) || [];
+    
     return {
       success: data.success,
-      repositories: data.repositories || [],
+      repositories: mappedRepositories,
       messages: data.messages || []
     };
   } catch (e) {
@@ -53,29 +68,54 @@ export async function getRepository(id: string): Promise<Repository> {
 
 export async function createRepository(repository: { name: string, lionweb_version: string, history: boolean }): Promise<Repository> {
   try {
+    const params = new URLSearchParams({
+      repository: repository.name,
+      lionWebVersion: repository.lionweb_version,
+      clientId: 'lionWebRepoAdminUI',
+      history: repository.history.toString()
+    });
+
+    console.log('Creating repository with params:', Object.fromEntries(params.entries()));
+
     const response = await fetch(
-      `${API_BASE_URL}/createRepository`,
+      `${API_BASE_URL}/createRepository?${params.toString()}`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          name: repository.name,
-          lionweb_version: repository.lionweb_version,
-          history: repository.history
-        }),
+        }
       }
     );
-    const data = await handleResponse(response);
-    if (!data.success) {
-      throw new Error(data.messages?.[0]?.message || 'Failed to create repository');
+    
+    const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse response as JSON:', e);
+      throw new Error('Server response was not valid JSON');
     }
+    
+    console.log('Server response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      data: data
+    });
+    
+    // Handle error cases
+    if (!response.ok || !data.success) {
+      const errorMessage = data.messages?.[0]?.message || 'Failed to create repository';
+      console.error('Error creating repository:', errorMessage);
+      throw new Error(errorMessage);
+    }
+    
     return data.repository;
   } catch (e) {
     console.error('Error creating repository:', e);
-    throw new Error(`Failed to create repository: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    throw e; // Re-throw the error to handle it in the component
   }
 }
 
@@ -98,17 +138,18 @@ export async function updateRepository(id: string, repository: Partial<Repositor
 
 export async function deleteRepository(repositoryName: string): Promise<void> {
   try {
+    const params = new URLSearchParams({
+      repository: repositoryName,
+      clientId: 'lionWebRepoAdminUI'
+    });
+
     const response = await fetch(
-      `${API_BASE_URL}/deleteRepository`,
+      `${API_BASE_URL}/deleteRepository?${params.toString()}`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          name: repositoryName
-        }),
+        }
       }
     );
     const data = await handleResponse(response);
