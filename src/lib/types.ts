@@ -28,9 +28,6 @@ export interface CreateRepositoryRequest {
 export interface Partition {
   id: string;
   name: string;
-  nodeCount: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface PartitionListResponse {
