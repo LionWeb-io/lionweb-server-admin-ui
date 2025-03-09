@@ -260,404 +260,412 @@
   }
 </script>
 
-<div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4">LionWeb Playground</h1>
-  
-  <div
-    bind:this={dropZone}
-    class="border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 {isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}"
-    on:dragenter={handleDragEnter}
-    on:dragleave={handleDragLeave}
-    on:dragover={handleDragOver}
-    on:drop={handleDrop}
-  >
-    <div class="text-gray-600">
-      <p class="text-lg mb-2">Drag and drop a LionWeb JSON file here</p>
-      <p class="text-sm">or</p>
-      <input
-        type="file"
-        accept=".json"
-        class="hidden"
-        id="fileInput"
-        on:change={async (e: Event) => {
-          const target = e.target as HTMLInputElement;
-          const files = target.files;
-          if (files && files.length > 0) {
-            await handleFileLoad(files[0]);
-          }
-        }}
-      />
-      <label
-        for="fileInput"
-        class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
-      >
-        Select File
-      </label>
-    </div>
+<div class="relative min-h-screen">
+  <!-- Background Logo -->
+  <div class="fixed inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+    <img src="/images/lionweb-logo.png" alt="" class="w-[800px] h-[800px] object-contain" />
   </div>
 
-  {#if error}
-    <div class="mt-4 p-4 bg-red-100 text-red-700 rounded">
-      {error}
+  <!-- Content -->
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">LionWeb Playground</h1>
+    
+    <div
+      bind:this={dropZone}
+      class="border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 {isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}"
+      on:dragenter={handleDragEnter}
+      on:dragleave={handleDragLeave}
+      on:dragover={handleDragOver}
+      on:drop={handleDrop}
+    >
+      <div class="text-gray-600">
+        <p class="text-lg mb-2">Drag and drop a LionWeb JSON file here</p>
+        <p class="text-sm">or</p>
+        <input
+          type="file"
+          accept=".json"
+          class="hidden"
+          id="fileInput"
+          on:change={async (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            const files = target.files;
+            if (files && files.length > 0) {
+              await handleFileLoad(files[0]);
+            }
+          }}
+        />
+        <label
+          for="fileInput"
+          class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
+        >
+          Select File
+        </label>
+      </div>
     </div>
-  {/if}
 
-  {#if chunk}
-    <div class="mt-8">
-      <h2 class="text-xl font-semibold mb-4">File Contents - Serialization Format Version: {chunk.serializationFormatVersion}</h2>
-      
-      <div class="space-y-4">
-        <div class="bg-white p-4 rounded shadow">
-          <h3 class="font-medium mb-2">Languages</h3>
-          {#if !chunk?.languages?.length}
-            <p class="italic text-gray-500">No languages specified</p>
-          {:else}
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  {#each chunk.languages as language}
+    {#if error}
+      <div class="mt-4 p-4 bg-red-100 text-red-700 rounded">
+        {error}
+      </div>
+    {/if}
+
+    {#if chunk}
+      <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-4">File Contents - Serialization Format Version: {chunk.serializationFormatVersion}</h2>
+        
+        <div class="space-y-4">
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-medium mb-2">Languages</h3>
+            {#if !chunk?.languages?.length}
+              <p class="italic text-gray-500">No languages specified</p>
+            {:else}
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
                     <tr>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.key || 'Unknown'}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.version || 'Unknown'}</td>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
                     </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-          {/if}
-        </div>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    {#each chunk.languages as language}
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.key || 'Unknown'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{language?.version || 'Unknown'}</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </div>
 
-        <div class="bg-white p-4 rounded shadow">
-          <h3 class="font-medium mb-2">Nodes ({chunk?.nodes?.length || 0}, {getRootNodeCount()} roots)</h3>
-          <div class="space-y-2">
-            {#each renderNodeTree(null) as node}
-              <div class="border rounded p-2" style="margin-left: {node.level * 20}px; background-color: {getNodeColor(node.id)}" id="node-{node.id}">
-                <div class="flex items-start space-x-2">
-                  {#if hasChildren(node)}
-                    <button
-                      class="text-gray-500 hover:text-gray-700 mt-1"
-                      on:click={() => toggleNode(node.id)}
-                    >
-                      {expandedNodes.has(node.id) ? '▼' : '▶'}
-                    </button>
-                  {:else}
-                    <span class="w-4"></span>
-                  {/if}
-                  <div>
-                    <p class="font-medium">ID: {node.id || 'Unknown'}</p>
-                    {#if node.classifier}
-                      <p class="text-sm text-gray-600">Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version || 'Unknown'}</p>
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-medium mb-2">Nodes ({chunk?.nodes?.length || 0}, {getRootNodeCount()} roots)</h3>
+            <div class="space-y-2">
+              {#each renderNodeTree(null) as node}
+                <div class="border rounded p-2" style="margin-left: {node.level * 20}px; background-color: {getNodeColor(node.id)}" id="node-{node.id}">
+                  <div class="flex items-start space-x-2">
+                    {#if hasChildren(node)}
+                      <button
+                        class="text-gray-500 hover:text-gray-700 mt-1"
+                        on:click={() => toggleNode(node.id)}
+                      >
+                        {expandedNodes.has(node.id) ? '▼' : '▶'}
+                      </button>
+                    {:else}
+                      <span class="w-4"></span>
                     {/if}
-                    {#if node.properties?.length}
-                      <div class="mt-2">
-                        <div class="properties-container">
-                          {#each node.properties as property}
-                            <div class="property-row">
-                              <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
-                              </span>
-                              <span class="property-equals">=</span>
-                              <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
-                                {renderPropertyValue({ value: getPropertyValue(property) })}
-                              </span>
-                            </div>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
-                    {#if node.references.length > 0}
-                      <div class="mt-2">
-                        <div class="properties-container">
-                          {#each node.references as reference}
-                            {#if getReferenceValues(reference).length > 0}
+                    <div>
+                      <p class="font-medium">ID: {node.id || 'Unknown'}</p>
+                      {#if node.classifier}
+                        <p class="text-sm text-gray-600">Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version || 'Unknown'}</p>
+                      {/if}
+                      {#if node.properties?.length}
+                        <div class="mt-2">
+                          <div class="properties-container">
+                            {#each node.properties as property}
                               <div class="property-row">
                                 <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                  (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
+                                  (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
                                 </span>
-                                <span class="reference-arrow">→</span>
-                                <div class="reference-targets">
-                                  {#each getReferenceValues(reference) as target}
-                                    <span class="reference-target">
-                                      {#if target.resolveInfo}
-                                        <span>{target.resolveInfo}</span>
-                                      {/if}
-                                      {#if target.reference}
-                                        <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
-                                          ({target.reference})
-                                        </span>
-                                      {/if}
-                                    </span>
-                                  {/each}
-                                </div>
-                              </div>
-                            {/if}
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
-                    {#if node.containments.length > 0}
-                      <div class="mt-2">
-                        {#each node.containments as containment}
-                          {#if expandedNodes.has(node.id)}
-                            {#each getContainedNodes(containment) as childNode}
-                              <div class="border rounded p-2" style="margin-left: 20px; background-color: {getNodeColor(childNode.id)}" id="node-{childNode.id}">
-                                <div class="flex items-start space-x-2">
-                                  {#if hasChildren(childNode)}
-                                    <button
-                                      class="text-gray-500 hover:text-gray-700 mt-1"
-                                      on:click={() => toggleNode(childNode.id)}
-                                    >
-                                      {expandedNodes.has(childNode.id) ? '▼' : '▶'}
-                                    </button>
-                                  {:else}
-                                    <span class="w-4"></span>
-                                  {/if}
-                                  <div>
-                                    <p class="font-medium">ID: {childNode.id}</p>
-                                    {#if childNode.classifier}
-                                      <p class="text-sm text-gray-600">Classifier: {childNode.classifier.key} v{childNode.classifier.version}</p>
-                                    {/if}
-                                    {#if childNode.properties.length > 0}
-                                      <div class="mt-2">
-                                        <div class="properties-container">
-                                          {#each childNode.properties as property}
-                                            <div class="property-row">
-                                              <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                                (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
-                                              </span>
-                                              <span class="property-equals">=</span>
-                                              <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
-                                                {renderPropertyValue({ value: getPropertyValue(property) })}
-                                              </span>
-                                            </div>
-                                          {/each}
-                                        </div>
-                                      </div>
-                                    {/if}
-                                    {#if childNode.references.length > 0}
-                                      <div class="mt-2">
-                                        <div class="properties-container">
-                                          {#each childNode.references as reference}
-                                            {#if getReferenceValues(reference).length > 0}
-                                              <div class="property-row">
-                                                <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                                  (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
-                                                </span>
-                                                <span class="reference-arrow">→</span>
-                                                <div class="reference-targets">
-                                                  {#each getReferenceValues(reference) as target}
-                                                    <span class="reference-target">
-                                                      {#if target.resolveInfo}
-                                                        <span>{target.resolveInfo}</span>
-                                                      {/if}
-                                                      {#if target.reference}
-                                                        <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
-                                                          ({target.reference})
-                                                        </span>
-                                                      {/if}
-                                                    </span>
-                                                  {/each}
-                                                </div>
-                                              </div>
-                                            {/if}
-                                          {/each}
-                                        </div>
-                                      </div>
-                                    {/if}
-                                    {#if childNode.containments.length > 0}
-                                      <div class="mt-2">
-                                        {#each childNode.containments as containment}
-                                          {#if expandedNodes.has(childNode.id)}
-                                            {#each getContainedNodes(containment) as grandChild}
-                                              <div class="border rounded p-2" style="margin-left: 20px; background-color: {getNodeColor(grandChild.id)}" id="node-{grandChild.id}">
-                                                <!-- Recursively render grandChild with the same structure -->
-                                                <div class="flex items-start space-x-2">
-                                                  {#if hasChildren(grandChild)}
-                                                    <button
-                                                      class="text-gray-500 hover:text-gray-700 mt-1"
-                                                      on:click={() => toggleNode(grandChild.id)}
-                                                    >
-                                                      {expandedNodes.has(grandChild.id) ? '▼' : '▶'}
-                                                    </button>
-                                                  {:else}
-                                                    <span class="w-4"></span>
-                                                  {/if}
-                                                  <div>
-                                                    <p class="font-medium">ID: {grandChild.id}</p>
-                                                    {#if grandChild.classifier}
-                                                      <p class="text-sm text-gray-600">Classifier: {grandChild.classifier.key} v{grandChild.classifier.version}</p>
-                                                    {/if}
-                                                    <!-- Properties -->
-                                                    {#if grandChild.properties.length > 0}
-                                                      <div class="mt-2">
-                                                        <div class="properties-container">
-                                                          {#each grandChild.properties as property}
-                                                            <div class="property-row">
-                                                              <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                                                (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
-                                                              </span>
-                                                              <span class="property-equals">=</span>
-                                                              <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
-                                                                {renderPropertyValue({ value: getPropertyValue(property) })}
-                                                              </span>
-                                                            </div>
-                                                          {/each}
-                                                        </div>
-                                                      </div>
-                                                    {/if}
-                                                    <!-- References -->
-                                                    {#if grandChild.references.length > 0}
-                                                      <div class="mt-2">
-                                                        <div class="properties-container">
-                                                          {#each grandChild.references as reference}
-                                                            {#if getReferenceValues(reference).length > 0}
-                                                              <div class="property-row">
-                                                                <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                                                  (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
-                                                                </span>
-                                                                <span class="reference-arrow">→</span>
-                                                                <div class="reference-targets">
-                                                                  {#each getReferenceValues(reference) as target}
-                                                                    <span class="reference-target">
-                                                                      {#if target.resolveInfo}
-                                                                        <span>{target.resolveInfo}</span>
-                                                                      {/if}
-                                                                      {#if target.reference}
-                                                                        <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
-                                                                          ({target.reference})
-                                                                        </span>
-                                                                      {/if}
-                                                                    </span>
-                                                                  {/each}
-                                                                </div>
-                                                              </div>
-                                                            {/if}
-                                                          {/each}
-                                                        </div>
-                                                      </div>
-                                                    {/if}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            {/each}
-                                          {/if}
-                                        {/each}
-                                      </div>
-                                    {/if}
-                                  </div>
-                                </div>
+                                <span class="property-equals">=</span>
+                                <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                  {renderPropertyValue({ value: getPropertyValue(property) })}
+                                </span>
                               </div>
                             {/each}
-                          {/if}
-                        {/each}
-                      </div>
-                    {/if}
-                    {#if node.annotations.length > 0}
-                      <p class="text-sm text-gray-600">Annotations: {node.annotations.length}</p>
-                    {/if}
-                  </div>
-                </div>
-                {#if expandedNodes.has(node.id)}
-                  {#each node.children as child}
-                    <div class="mt-2">
-                      {#each renderNodeTree(child.id, child.level) as grandChild}
-                        <div class="border rounded p-2" style="margin-left: {grandChild.level * 20}px; background-color: {getNodeColor(grandChild.id)}" id="node-{grandChild.id}">
-                          <div class="flex items-center space-x-2">
-                            {#if hasChildren(grandChild)}
-                              <button
-                                class="text-gray-500 hover:text-gray-700"
-                                on:click={() => toggleNode(grandChild.id)}
-                              >
-                                {expandedNodes.has(grandChild.id) ? '▼' : '▶'}
-                              </button>
-                            {:else}
-                              <span class="w-4"></span>
-                            {/if}
-                            <div>
-                              <p class="font-medium">ID: {grandChild.id}</p>
-                              {#if grandChild.classifier}
-                                <p class="text-sm text-gray-600">Classifier: {grandChild.classifier.key} v{grandChild.classifier.version}</p>
-                              {/if}
-                              {#if grandChild.properties.length > 0}
-                                <div class="mt-1">
-                                  <div class="properties-container">
-                                    {#each grandChild.properties as property}
-                                      <div class="property-row">
-                                        <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                          (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
-                                        </span>
-                                        <span class="property-equals">=</span>
-                                        <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
-                                          {renderPropertyValue({ value: getPropertyValue(property) })}
-                                        </span>
-                                      </div>
+                          </div>
+                        </div>
+                      {/if}
+                      {#if node.references.length > 0}
+                        <div class="mt-2">
+                          <div class="properties-container">
+                            {#each node.references as reference}
+                              {#if getReferenceValues(reference).length > 0}
+                                <div class="property-row">
+                                  <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                    (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
+                                  </span>
+                                  <span class="reference-arrow">→</span>
+                                  <div class="reference-targets">
+                                    {#each getReferenceValues(reference) as target}
+                                      <span class="reference-target">
+                                        {#if target.resolveInfo}
+                                          <span>{target.resolveInfo}</span>
+                                        {/if}
+                                        {#if target.reference}
+                                          <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
+                                            ({target.reference})
+                                          </span>
+                                        {/if}
+                                      </span>
                                     {/each}
                                   </div>
                                 </div>
                               {/if}
-                              {#if grandChild.containments.length > 0}
-                                <div class="mt-1">
-                                  <p class="text-sm font-medium text-gray-700">Containments:</p>
-                                  <ul class="list-disc list-inside text-sm text-gray-600">
-                                    {#each grandChild.containments as containment}
-                                      <li>{getContainmentKey(containment)}: {renderContainmentValue(containment)}</li>
-                                    {/each}
-                                  </ul>
-                                </div>
-                              {/if}
-                              {#if grandChild.references.length > 0}
-                                <div class="mt-1">
-                                  <div class="properties-container">
-                                    {#each grandChild.references as reference}
-                                      {#if getReferenceValues(reference).length > 0}
-                                        <div class="property-row">
-                                          <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                                            (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
-                                          </span>
-                                          <span class="reference-arrow">→</span>
-                                          <div class="reference-targets">
-                                            {#each getReferenceValues(reference) as target}
-                                              <span class="reference-target">
-                                                {#if target.resolveInfo}
-                                                  <span>{target.resolveInfo}</span>
-                                                {/if}
-                                                {#if target.reference}
-                                                  <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
-                                                    ({target.reference})
-                                                  </span>
-                                                {/if}
-                                              </span>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                      {#if node.containments.length > 0}
+                        <div class="mt-2">
+                          {#each node.containments as containment}
+                            {#if expandedNodes.has(node.id)}
+                              {#each getContainedNodes(containment) as childNode}
+                                <div class="border rounded p-2" style="margin-left: 20px; background-color: {getNodeColor(childNode.id)}" id="node-{childNode.id}">
+                                  <div class="flex items-start space-x-2">
+                                    {#if hasChildren(childNode)}
+                                      <button
+                                        class="text-gray-500 hover:text-gray-700 mt-1"
+                                        on:click={() => toggleNode(childNode.id)}
+                                      >
+                                        {expandedNodes.has(childNode.id) ? '▼' : '▶'}
+                                      </button>
+                                    {:else}
+                                      <span class="w-4"></span>
+                                    {/if}
+                                    <div>
+                                      <p class="font-medium">ID: {childNode.id}</p>
+                                      {#if childNode.classifier}
+                                        <p class="text-sm text-gray-600">Classifier: {childNode.classifier.key} v{childNode.classifier.version}</p>
+                                      {/if}
+                                      {#if childNode.properties.length > 0}
+                                        <div class="mt-2">
+                                          <div class="properties-container">
+                                            {#each childNode.properties as property}
+                                              <div class="property-row">
+                                                <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                                  (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
+                                                </span>
+                                                <span class="property-equals">=</span>
+                                                <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                                  {renderPropertyValue({ value: getPropertyValue(property) })}
+                                                </span>
+                                              </div>
                                             {/each}
                                           </div>
                                         </div>
                                       {/if}
-                                    {/each}
+                                      {#if childNode.references.length > 0}
+                                        <div class="mt-2">
+                                          <div class="properties-container">
+                                            {#each childNode.references as reference}
+                                              {#if getReferenceValues(reference).length > 0}
+                                                <div class="property-row">
+                                                  <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                                    (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
+                                                  </span>
+                                                  <span class="reference-arrow">→</span>
+                                                  <div class="reference-targets">
+                                                    {#each getReferenceValues(reference) as target}
+                                                      <span class="reference-target">
+                                                        {#if target.resolveInfo}
+                                                          <span>{target.resolveInfo}</span>
+                                                        {/if}
+                                                        {#if target.reference}
+                                                          <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
+                                                            ({target.reference})
+                                                          </span>
+                                                        {/if}
+                                                      </span>
+                                                    {/each}
+                                                  </div>
+                                                </div>
+                                              {/if}
+                                            {/each}
+                                          </div>
+                                        </div>
+                                      {/if}
+                                      {#if childNode.containments.length > 0}
+                                        <div class="mt-2">
+                                          {#each childNode.containments as containment}
+                                            {#if expandedNodes.has(childNode.id)}
+                                              {#each getContainedNodes(containment) as grandChild}
+                                                <div class="border rounded p-2" style="margin-left: 20px; background-color: {getNodeColor(grandChild.id)}" id="node-{grandChild.id}">
+                                                  <!-- Recursively render grandChild with the same structure -->
+                                                  <div class="flex items-start space-x-2">
+                                                    {#if hasChildren(grandChild)}
+                                                      <button
+                                                        class="text-gray-500 hover:text-gray-700 mt-1"
+                                                        on:click={() => toggleNode(grandChild.id)}
+                                                      >
+                                                        {expandedNodes.has(grandChild.id) ? '▼' : '▶'}
+                                                      </button>
+                                                    {:else}
+                                                      <span class="w-4"></span>
+                                                    {/if}
+                                                    <div>
+                                                      <p class="font-medium">ID: {grandChild.id}</p>
+                                                      {#if grandChild.classifier}
+                                                        <p class="text-sm text-gray-600">Classifier: {grandChild.classifier.key} v{grandChild.classifier.version}</p>
+                                                      {/if}
+                                                      <!-- Properties -->
+                                                      {#if grandChild.properties.length > 0}
+                                                        <div class="mt-2">
+                                                          <div class="properties-container">
+                                                            {#each grandChild.properties as property}
+                                                              <div class="property-row">
+                                                                <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                                                  (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
+                                                                </span>
+                                                                <span class="property-equals">=</span>
+                                                                <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                                                  {renderPropertyValue({ value: getPropertyValue(property) })}
+                                                                </span>
+                                                              </div>
+                                                            {/each}
+                                                          </div>
+                                                        </div>
+                                                      {/if}
+                                                      <!-- References -->
+                                                      {#if grandChild.references.length > 0}
+                                                        <div class="mt-2">
+                                                          <div class="properties-container">
+                                                            {#each grandChild.references as reference}
+                                                              {#if getReferenceValues(reference).length > 0}
+                                                                <div class="property-row">
+                                                                  <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                                                    (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
+                                                                  </span>
+                                                                  <span class="reference-arrow">→</span>
+                                                                  <div class="reference-targets">
+                                                                    {#each getReferenceValues(reference) as target}
+                                                                      <span class="reference-target">
+                                                                        {#if target.resolveInfo}
+                                                                          <span>{target.resolveInfo}</span>
+                                                                        {/if}
+                                                                        {#if target.reference}
+                                                                          <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
+                                                                            ({target.reference})
+                                                                          </span>
+                                                                        {/if}
+                                                                      </span>
+                                                                    {/each}
+                                                                  </div>
+                                                                </div>
+                                                              {/if}
+                                                            {/each}
+                                                          </div>
+                                                        </div>
+                                                      {/if}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              {/each}
+                                            {/if}
+                                          {/each}
+                                        </div>
+                                      {/if}
+                                    </div>
                                   </div>
                                 </div>
+                              {/each}
+                            {/if}
+                          {/each}
+                        </div>
+                      {/if}
+                      {#if node.annotations.length > 0}
+                        <p class="text-sm text-gray-600">Annotations: {node.annotations.length}</p>
+                      {/if}
+                    </div>
+                  </div>
+                  {#if expandedNodes.has(node.id)}
+                    {#each node.children as child}
+                      <div class="mt-2">
+                        {#each renderNodeTree(child.id, child.level) as grandChild}
+                          <div class="border rounded p-2" style="margin-left: {grandChild.level * 20}px; background-color: {getNodeColor(grandChild.id)}" id="node-{grandChild.id}">
+                            <div class="flex items-center space-x-2">
+                              {#if hasChildren(grandChild)}
+                                <button
+                                  class="text-gray-500 hover:text-gray-700"
+                                  on:click={() => toggleNode(grandChild.id)}
+                                >
+                                  {expandedNodes.has(grandChild.id) ? '▼' : '▶'}
+                                </button>
+                              {:else}
+                                <span class="w-4"></span>
                               {/if}
-                              {#if grandChild.annotations.length > 0}
-                                <p class="text-sm text-gray-600">Annotations: {grandChild.annotations.length}</p>
-                              {/if}
+                              <div>
+                                <p class="font-medium">ID: {grandChild.id}</p>
+                                {#if grandChild.classifier}
+                                  <p class="text-sm text-gray-600">Classifier: {grandChild.classifier.key} v{grandChild.classifier.version}</p>
+                                {/if}
+                                {#if grandChild.properties.length > 0}
+                                  <div class="mt-1">
+                                    <div class="properties-container">
+                                      {#each grandChild.properties as property}
+                                        <div class="property-row">
+                                          <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                            (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
+                                          </span>
+                                          <span class="property-equals">=</span>
+                                          <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
+                                            {renderPropertyValue({ value: getPropertyValue(property) })}
+                                          </span>
+                                        </div>
+                                      {/each}
+                                    </div>
+                                  </div>
+                                {/if}
+                                {#if grandChild.containments.length > 0}
+                                  <div class="mt-1">
+                                    <p class="text-sm font-medium text-gray-700">Containments:</p>
+                                    <ul class="list-disc list-inside text-sm text-gray-600">
+                                      {#each grandChild.containments as containment}
+                                        <li>{getContainmentKey(containment)}: {renderContainmentValue(containment)}</li>
+                                      {/each}
+                                    </ul>
+                                  </div>
+                                {/if}
+                                {#if grandChild.references.length > 0}
+                                  <div class="mt-1">
+                                    <div class="properties-container">
+                                      {#each grandChild.references as reference}
+                                        {#if getReferenceValues(reference).length > 0}
+                                          <div class="property-row">
+                                            <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                              (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
+                                            </span>
+                                            <span class="reference-arrow">→</span>
+                                            <div class="reference-targets">
+                                              {#each getReferenceValues(reference) as target}
+                                                <span class="reference-target">
+                                                  {#if target.resolveInfo}
+                                                    <span>{target.resolveInfo}</span>
+                                                  {/if}
+                                                  {#if target.reference}
+                                                    <span class="reference-link" on:click={() => scrollToNode(target.reference)}>
+                                                      ({target.reference})
+                                                    </span>
+                                                  {/if}
+                                                </span>
+                                              {/each}
+                                            </div>
+                                          </div>
+                                        {/if}
+                                      {/each}
+                                    </div>
+                                  </div>
+                                {/if}
+                                {#if grandChild.annotations.length > 0}
+                                  <p class="text-sm text-gray-600">Annotations: {grandChild.annotations.length}</p>
+                                {/if}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      {/each}
-                    </div>
-                  {/each}
-                {/if}
-              </div>
-            {/each}
+                        {/each}
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+              {/each}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 <style>
