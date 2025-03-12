@@ -39,12 +39,12 @@ export async function getRepositories(): Promise<ListRepositoriesResponse> {
   }
 }
 
-export async function createRepository(repositoryConfiguration: RepositoryConfiguration): Promise<boolean> {
+export async function createRepository(repositoryConfiguration: RepositoryConfiguration): Promise<void> {
   const client = new RepositoryClient(CLIENT_ID, null);
   const response = await client.dbAdmin.createRepository(
     repositoryConfiguration.name, repositoryConfiguration.history, repositoryConfiguration.lionweb_version as LionWebVersionType);
   if (response.body.success) {
-    return true
+    return
   } else {
     console.error('Error creating repositories:', response.body.messages);
     throw new Error(`Failed to create repositories: ${response.body.messages}`);
@@ -52,28 +52,13 @@ export async function createRepository(repositoryConfiguration: RepositoryConfig
 }
 
 export async function deleteRepository(repositoryName: string): Promise<void> {
-  try {
-    const params = new URLSearchParams({
-      repository: repositoryName,
-      clientId: CLIENT_ID
-    });
-
-    const response = await fetch(
-      `${API_BASE_URL}/deleteRepository?${params.toString()}`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }
-    );
-    const data = await handleResponse(response);
-    if (!data.success) {
-      throw new Error(data.messages?.[0]?.message || 'Failed to delete repository');
-    }
-  } catch (e) {
-    console.error('Error deleting repository:', e);
-    throw new Error(`Failed to delete repository: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  const client = new RepositoryClient(CLIENT_ID, null);
+  const response = await client.dbAdmin.deleteRepository(repositoryName);
+  if (response.body.success) {
+    return
+  } else {
+    console.error('Error delete repositories:', response.body.messages);
+    throw new Error(`Failed to delete repositories: ${response.body.messages}`);
   }
 }
 
