@@ -1,5 +1,7 @@
 import type { Repository, RepositoryListResponse, CreateRepositoryRequest, Partition, PartitionListResponse, BulkListPartitionsResponse, CreatePartitionRequest } from '$lib/types';
 import type { SerializationChunk } from '@lionweb/core';
+import { RepositoryClient } from '@lionweb/repository-client';
+import type { ListRepositoriesResponse, RepositoryConfiguration, LionWebVersionType } from '@lionweb/repository-client';
 
 /*
  * In the future, we should use the lionweb-repository client module.
@@ -26,82 +28,26 @@ async function handleResponse(response: Response) {
   return response.json();
 }
 
-export async function getRepositories(): Promise<RepositoryListResponse> {
-  try {
-    const params = new URLSearchParams({
-      clientId: CLIENT_ID
-    });
-
-    const response = await fetch(
-      `${API_BASE_URL}/listRepositories?${params.toString()}`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
-    );
-    const data = await handleResponse(response);
-    
-    // Map the server response to our expected format
-    const mappedRepositories = (data.repositories as ServerRepository[])?.map(repo => ({
-      repository_name: repo.name,
-      lionweb_version: repo.lionweb_version,
-      history: repo.history,
-      schema_name: repo.schema_name || ''
-    })) || [];
-    
-    return {
-      success: data.success,
-      repositories: mappedRepositories,
-      messages: data.messages || []
-    };
-  } catch (e) {
-    console.error('Error fetching repositories:', e);
-    throw new Error(`Failed to fetch repositories: ${e instanceof Error ? e.message : 'Unknown error'}`);
+export async function getRepositories(): Promise<ListRepositoriesResponse> {
+  const client = new RepositoryClient(CLIENT_ID, null);
+  const response = await client.dbAdmin.listRepositories();
+  if (response.body.success) {
+    return response.body;
+  } else {
+    console.error('Error fetching repositories:', response.body.messages);
+    throw new Error(`Failed to fetch repositories: ${response.body.messages}`);
   }
 }
 
-export async function createRepository(repository: { name: string, lionweb_version: string, history: boolean }): Promise<Repository> {
-  try {
-    const params = new URLSearchParams({
-      repository: repository.name,
-      lionWebVersion: repository.lionweb_version,
-      clientId: CLIENT_ID,
-      history: repository.history.toString()
-    });
-
-    const response = await fetch(
-      `${API_BASE_URL}/createRepository?${params.toString()}`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }
-    );
-    
-    const responseText = await response.text();
-    
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse response as JSON:', e);
-      throw new Error('Server response was not valid JSON');
-    }  
-    
-    // Handle error cases
-    if (!response.ok || !data.success) {
-      const errorMessage = data.messages?.[0]?.message || 'Failed to create repository';
-      console.error('Error creating repository:', errorMessage);
-      throw new Error(errorMessage);
-    }
-    
-    return data.repository;
-  } catch (e) {
-    console.error('Error creating repository:', e);
-    throw e; // Re-throw the error to handle it in the component
+export async function createRepository(repositoryConfiguration: RepositoryConfiguration): Promise<boolean> {
+  const client = new RepositoryClient(CLIENT_ID, null);
+  const response = await client.dbAdmin.createRepository(
+    repositoryConfiguration.name, repositoryConfiguration.history, repositoryConfiguration.lionweb_version as LionWebVersionType);
+  if (response.body.success) {
+    return true
+  } else {
+    console.error('Error creating repositories:', response.body.messages);
+    throw new Error(`Failed to create repositories: ${response.body.messages}`);
   }
 }
 

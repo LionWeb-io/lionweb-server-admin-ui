@@ -1,18 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Repository, RepositoryListResponse } from '$lib/types';
   import { getRepositories, createRepository, deleteRepository } from '$lib/services/repository';
+  import type { RepositoryConfiguration } from '@lionweb/repository-client';
 
-  let repositories: Repository[] = [];
+  let repositories: RepositoryConfiguration[] = [];
   let loading = true;
   let error: string | null = null;
   let showCreateModal = false;
   let showDeleteConfirm = false;
-  let repositoryToDelete: Repository | null = null;
+  let repositoryToDelete: RepositoryConfiguration | null = null;
   let createError: string | null = null;
   
   // Form data for new repository
-  let newRepository = {
+  let newRepository : RepositoryConfiguration = {
     name: '',
     lionweb_version: '2024.1',
     history: false
@@ -25,10 +25,8 @@
   async function loadRepositories() {
     try {
       const response = await getRepositories();
-      console.log('Repository response:', JSON.stringify(response, null, 2));
       if (response.success) {
         repositories = response.repositories;
-        console.log('Repositories array:', JSON.stringify(repositories, null, 2));
       } else {
         error = response.messages[0]?.message || 'Failed to load repositories';
       }
@@ -57,11 +55,7 @@
         return;
       }
       
-      await createRepository({
-        name: newRepository.name,
-        lionweb_version: newRepository.lionweb_version,
-        history: newRepository.history
-      });
+      await createRepository(newRepository);
       
       // Reset form and close modal
       newRepository = {
@@ -88,7 +82,7 @@
       loading = true;
       error = null;
       
-      await deleteRepository(repositoryToDelete.repository_name);
+      await deleteRepository(repositoryToDelete.name);
       
       // Reset state and close modal
       repositoryToDelete = null;
@@ -136,7 +130,7 @@
           {#each repositories as repository}
             <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
               <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.repository_name}</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">{repository.name}</h3>
                 
                 <div class="flex flex-wrap gap-2 mb-4">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -155,7 +149,7 @@
 
                 <div class="flex justify-end space-x-2">
                   <a
-                    href="/explore?repository={repository.repository_name}"
+                    href="/explore?repository={repository.name}"
                     class="inline-flex items-center p-2 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     title="Explore Repository"
                   >
@@ -302,7 +296,7 @@
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Delete Repository</h3>
             <div class="mt-2">
               <p class="text-sm text-gray-500">
-                Are you sure you want to delete the repository "{repositoryToDelete?.repository_name}"? This action cannot be undone.
+                Are you sure you want to delete the repository "{repositoryToDelete?.name}"? This action cannot be undone.
               </p>
             </div>
           </div>
