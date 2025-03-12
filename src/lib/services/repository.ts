@@ -93,7 +93,32 @@ export async function createPartition(repositoryName: string, chunk: LionWebJson
     chunk: JSON.stringify(chunk, null, 2)
   });
 
-  const response = await client.bulk.createPartitions(chunk);
+  const rootNodes = chunk.nodes.filter((node) => node.parent === null);
+  if (rootNodes.length !== 1) {
+    throw new Error('Expected exactly one root node, got ' + rootNodes.length);
+  }
+
+  const emptyContainments = rootNodes[0].containments.map((containment)=>{
+  return {containment: containment.containment, children: []};
+  });
+
+  const rootifiedNode = {
+    id: rootNodes[0].id,
+    classifier: rootNodes[0].classifier,
+    properties: rootNodes[0].properties,
+    containments: emptyContainments,
+    references: rootNodes[0].references,
+    annotations: [],
+    parent: null
+  };
+
+  const tmpChunk : LionWebJsonChunk = {
+    serializationFormatVersion: chunk.serializationFormatVersion,
+    languages: chunk.languages,
+    nodes: [rootifiedNode],
+  };
+
+  const response = await client.bulk.createPartitions(tmpChunk);
 
   const responseData = response.body;
   console.log('Create partition response:', responseData);
