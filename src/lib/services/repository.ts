@@ -1,24 +1,10 @@
 import type { Repository, RepositoryListResponse, CreateRepositoryRequest, Partition, PartitionListResponse, BulkListPartitionsResponse, CreatePartitionRequest } from '$lib/types';
 import type { SerializationChunk } from '@lionweb/core';
 import { RepositoryClient } from '@lionweb/repository-client';
-import type { ListRepositoriesResponse, RepositoryConfiguration, LionWebVersionType } from '@lionweb/repository-client';
-
-/*
- * In the future, we should use the lionweb-repository client module.
- * We do not use it yet, as at the moment is not browser compatible 
- * (see https://github.com/lionweb-org/lionweb-repository/issues/101).
- */
+import type { ListRepositoriesResponse, RepositoryConfiguration, LionWebVersionType, LionWebJsonChunk } from '@lionweb/repository-client';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
 const CLIENT_ID = 'lionWebRepoAdminUI';
-
-// Server response type
-interface ServerRepository {
-  name: string;
-  lionweb_version: string;
-  history: boolean;
-  schema_name?: string;
-}
 
 async function handleResponse(response: Response) {
   if (!response.ok) {
@@ -99,37 +85,21 @@ export async function getPartitions(repositoryName: string): Promise<PartitionLi
   }
 }
 
-export async function createPartition(repositoryName: string, chunk: SerializationChunk): Promise<Partition> {
+export async function createPartition(repositoryName: string, chunk: LionWebJsonChunk): Promise<Partition> {
+  const client = new RepositoryClient(CLIENT_ID, repositoryName);
+
   console.log('Creating partition with data:', {
     repositoryName,
     chunk: JSON.stringify(chunk, null, 2)
   });
 
-  const params = new URLSearchParams({
-    clientId: CLIENT_ID,
-    repository: repositoryName
-  });
+  const response = await client.bulk.createPartitions(chunk);
 
-  const response = await fetch(
-    `${API_BASE_URL}/bulk/createPartitions?${params.toString()}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(chunk),
-    }
-  );
-
-  const responseData = await response.json();
+  const responseData = response.body;
   console.log('Create partition response:', responseData);
 
-  if (!response.ok) {
-    throw new Error(responseData.error || 'Failed to create partition');
-  }
-
   if (!responseData.success) {
-    throw new Error('Failed to create partition: ' + (responseData.messages?.[0]?.message || 'Unknown error'));
+    throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
   }
 
   // Extract the partition ID from the response messages
@@ -140,8 +110,8 @@ export async function createPartition(repositoryName: string, chunk: Serializati
 
   // Create a partition object with the available information
   const partition: Partition = {
-    id: versionMessage.data.version,
-    name: `Partition ${versionMessage.data.version}`,
+    id: (versionMessage as any).data.version,
+    name: `Partition ${(versionMessage as any).data.version}`,
   };
 
   return partition;
