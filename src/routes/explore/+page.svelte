@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Partition } from '$lib/types';
   import type { SerializationChunk } from '@lionweb/core';
-  import { getPartitions, createPartition } from '$lib/services/repository';
+  import { getPartitions, createPartition, deletePartition, loadPartition } from '$lib/services/repository';
   import { currentSerializationFormatVersion } from '@lionweb/core';
   import { page } from '$app/stores';
 
@@ -11,7 +11,7 @@
   const DEFAULT_VERSION = "2024.1"; // Most recent version
 
   let repositoryName = $page.url.searchParams.get('repository') || 'default';
-  let partitions: Partition[] = [];
+  let partitions: Array<Partition & { isLoaded?: boolean; data?: SerializationChunk }> = [];
   let loading = false;
   let error: string | null = null;
   let showCreateModal = false;
@@ -21,6 +21,8 @@
     nodes: []
   };
   let dragActive = false;
+  let showDeleteConfirm = false;
+  let partitionToDelete: Partition | null = null;
 
   async function loadPartitions() {
     if (!repositoryName) return;
@@ -31,7 +33,7 @@
     try {
       const response = await getPartitions(repositoryName);
       console.log('Partition list response:', response);
-      partitions = response.partitions;
+      partitions = response.partitions.map(p => ({ ...p, isLoaded: false }));
       console.log('Updated partitions array:', partitions);
     } catch (e) {
       error = `Failed to load partitions: ${e instanceof Error ? e.message : 'Unknown error'}`;
@@ -184,6 +186,60 @@
     }
   }
 
+  async function handleDeletePartition() {
+    if (!partitionToDelete) return;
+    
+    try {
+      loading = true;
+      error = null;
+      
+      await deletePartition(repositoryName, partitionToDelete.id);
+      
+      // Reset state and close modal
+      partitionToDelete = null;
+      showDeleteConfirm = false;
+      
+      // Reload the list
+      await loadPartitions();
+    } catch (e) {
+      error = `Failed to delete partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+      console.error('Error details:', e);
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function handleLoadPartition(partition: Partition) {
+    try {
+      loading = true;
+      error = null;
+      
+      const data = await loadPartition(repositoryName, partition.id);
+      
+      // Update the partition with its data
+      partitions = partitions.map(p => 
+        p.id === partition.id 
+          ? { ...p, isLoaded: true, data } 
+          : p
+      );
+    } catch (e) {
+      error = `Failed to load partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+      console.error('Error details:', e);
+    } finally {
+      loading = false;
+    }
+  }
+
+  function renderNodeTree(nodes: any[], parentId: string | null = null, level: number = 0): any[] {
+    return nodes
+      .filter(node => node.parent === parentId)
+      .map(node => ({
+        ...node,
+        level,
+        children: renderNodeTree(nodes, node.id, level + 1)
+      }));
+  }
+
   onMount(async () => {
     await loadPartitions();
   });
@@ -194,35 +250,143 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
-  <div class="px-4 py-5 sm:p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-900">Exploring Repository {repositoryName}</h2>
-      <button
-        on:click={() => showCreateModal = true}
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Create Partition
-      </button>
-    </div>
+<div class="relative min-h-screen">
+  <!-- Background Logo -->
+  <div class="fixed inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+    <img src="/images/lionweb-logo.png" alt="" class="w-[800px] h-[800px] object-contain" />
+  </div>
 
-    {#if loading}
-      <div class="text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+  <!-- Content -->
+  <div class="bg-white shadow rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Exploring Repository {repositoryName}</h2>
+        <button
+          on:click={() => showCreateModal = true}
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+          Create Partition
+        </button>
       </div>
-    {:else if error}
-      <div class="text-center py-12">
-        <p class="text-red-600">{error}</p>
-        <p class="text-sm text-gray-500 mt-2">Please check if the repository name is correct and the server is running at {import.meta.env.VITE_API_BASE_URL}</p>
-      </div>
-    {:else if partitions.length === 0}
-      <div class="text-center py-12">
-        <p class="text-gray-500">No partitions found in repository "{repositoryName}"</p>
-      </div>
-    {:else}
+
+      {#if loading}
+        <div class="text-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+        </div>
+      {:else if error}
+        <div class="text-center py-12">
+          <p class="text-red-600">{error}</p>
+          <p class="text-sm text-gray-500 mt-2">Please check if the repository name is correct and the server is running at {import.meta.env.VITE_API_BASE_URL}</p>
+        </div>
+      {:else if partitions.length === 0}
+        <div class="text-center py-12">
+          <p class="text-gray-500">No partitions found in repository "{repositoryName}"</p>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          {#each partitions as partition}
+            <div class="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
+              <div class="px-6 py-4">
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center gap-3">
+                    <!-- Status dot -->
+                    <div class="flex-shrink-0">
+                      {#if partition.isLoaded}
+                        <div class="h-3 w-3 rounded-full bg-green-500"></div>
+                      {:else}
+                        <div class="h-3 w-3 rounded-full bg-gray-300"></div>
+                      {/if}
+                    </div>
+                    <!-- Partition info -->
+                    <div>
+                      <h3 class="text-lg font-semibold text-gray-900">{partition.id}</h3>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <!-- Load button -->
+                    {#if !partition.isLoaded}
+                      <button
+                        on:click={() => handleLoadPartition(partition)}
+                        class="inline-flex items-center p-2 border border-transparent rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        title="Load Partition"
+                      >
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    {/if}
+                    <!-- Delete button -->
+                    <button
+                      on:click={() => {
+                        partitionToDelete = partition;
+                        showDeleteConfirm = true;
+                      }}
+                      class="inline-flex items-center p-2 border border-transparent rounded-full text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      title="Delete Partition"
+                    >
+                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Partition data -->
+                {#if partition.isLoaded && partition.data}
+                  <div class="mt-4 border-t pt-4">
+                    <div class="space-y-4">
+                      <!-- Languages -->
+                      {#if partition.data.languages.length > 0}
+                        <div>
+                          <h4 class="text-sm font-medium text-gray-700 mb-2">Languages</h4>
+                          <div class="flex flex-wrap gap-2">
+                            {#each partition.data.languages as language}
+                              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {language.key} v{language.version}
+                              </span>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                      
+                      <!-- Nodes -->
+                      <div>
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
+                        <div class="space-y-2">
+                          {#each renderNodeTree(partition.data.nodes) as node}
+                            <div style="margin-left: {node.level * 1.5}rem">
+                              <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-900">{node.id}</span>
+                                <span class="text-xs text-gray-500">({node.classifier.key})</span>
+                              </div>
+                              {#if node.properties.length > 0}
+                                <div class="ml-4 mt-1 space-y-1">
+                                  {#each node.properties as prop}
+                                    <div class="text-xs text-gray-600">
+                                      {prop.property.key}: {prop.value}
+                                    </div>
+                                  {/each}
+                                </div>
+                              {/if}
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+
       <!-- Add drag and drop area -->
       <div
-        class="mb-6 border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ease-in-out"
+        class="mt-6 border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ease-in-out"
         class:border-indigo-600={dragActive}
         class:border-gray-300={!dragActive}
         class:bg-indigo-50={dragActive}
@@ -239,40 +403,55 @@
           <p class="text-sm text-gray-500 mt-1">The file should contain a valid LionWeb serialization chunk</p>
         </div>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nodes</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated At</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            {#each partitions as partition}
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">{partition.name}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-500">{partition.nodeCount}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-500">{new Date(partition.createdAt).toLocaleString()}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-500">{new Date(partition.updatedAt).toLocaleString()}</div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    {/if}
+    </div>
   </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteConfirm}
+  <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+        <div class="sm:flex sm:items-start">
+          <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Delete Partition</h3>
+            <div class="mt-2">
+              <p class="text-sm text-gray-500">
+                Are you sure you want to delete this partition? This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+          <button
+            type="button"
+            on:click={handleDeletePartition}
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            on:click={() => {
+              partitionToDelete = null;
+              showDeleteConfirm = false;
+            }}
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if showCreateModal}
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">

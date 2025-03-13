@@ -27,7 +27,6 @@ export interface CreateRepositoryRequest {
 
 export interface Partition {
   id: string;
-  name: string;
 }
 
 export interface PartitionListResponse {

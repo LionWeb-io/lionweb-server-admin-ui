@@ -135,9 +135,33 @@ export async function createPartition(repositoryName: string, chunk: LionWebJson
 
   // Create a partition object with the available information
   const partition: Partition = {
-    id: (versionMessage as any).data.version,
-    name: `Partition ${(versionMessage as any).data.version}`,
+    id: rootifiedNode.id
   };
 
+  const storeResponse = await client.bulk.store(chunk);
+  if (!responseData.success) {
+    throw new Error(JSON.stringify(responseData.messages || 'Failed to store the partition data'));
+  }
+
   return partition;
+}
+
+export async function deletePartition(repositoryName: string, partitionId: string): Promise<void> {
+  const client = new RepositoryClient(CLIENT_ID, repositoryName);
+  const response = await client.bulk.deletePartitions([partitionId]);
+
+  if (!response.body.success) {
+    throw new Error(JSON.stringify(response.body.messages || 'Failed to delete partition'));
+  }
+}
+
+export async function loadPartition(repositoryName: string, partitionId: string): Promise<LionWebJsonChunk> {
+  const client = new RepositoryClient(CLIENT_ID, repositoryName);
+  const response = await client.bulk.retrieve([partitionId]);
+
+  if (!response.body.success) {
+    throw new Error(JSON.stringify(response.body.messages || 'Failed to load partition'));
+  }
+
+  return response.body.chunk;
 } 
