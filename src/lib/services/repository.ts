@@ -163,5 +163,7 @@ export async function loadPartition(repositoryName: string, partitionId: string)
     throw new Error(JSON.stringify(response.body.messages || 'Failed to load partition'));
   }
 
+  console.log('Load partition response:', response.body);
+
   return response.body.chunk;
 } 
