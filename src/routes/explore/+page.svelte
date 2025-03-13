@@ -5,6 +5,7 @@
   import { getPartitions, createPartition, deletePartition, loadPartition } from '$lib/services/repository';
   import { currentSerializationFormatVersion } from '@lionweb/core';
   import { page } from '$app/stores';
+  import NodeTree from '$lib/components/NodeTree.svelte';
 
   // Define valid serialization format versions
   const validVersions = ["2023.1", "2024.1"];
@@ -23,6 +24,7 @@
   let dragActive = false;
   let showDeleteConfirm = false;
   let partitionToDelete: Partition | null = null;
+  let expandedNodes = new Set<string>();
 
   async function loadPartitions() {
     if (!repositoryName) return;
@@ -230,14 +232,26 @@
     }
   }
 
-  function renderNodeTree(nodes: any[], parentId: string | null = null, level: number = 0): any[] {
-    return nodes
-      .filter(node => node.parent === parentId)
-      .map(node => ({
-        ...node,
-        level,
-        children: renderNodeTree(nodes, node.id, level + 1)
-      }));
+  function handleNodeClick(event: CustomEvent<{ nodeId: string }>) {
+    const nodeId = event.detail.nodeId;
+    // Find the partition containing this node
+    const partition = partitions.find(p => p.data?.nodes.some(n => n.id === nodeId));
+    if (partition) {
+      // Ensure the partition is loaded
+      if (!partition.isLoaded) {
+        handleLoadPartition(partition);
+      }
+      // Expand all nodes in the path to this node
+      if (partition.data) {
+        let currentNode = partition.data.nodes.find(n => n.id === nodeId);
+        while (currentNode) {
+          expandedNodes.add(currentNode.id);
+          const parentId = currentNode.parent;
+          currentNode = parentId ? partition.data.nodes.find(n => n.id === parentId) : undefined;
+        }
+        expandedNodes = expandedNodes; // Trigger reactivity
+      }
+    }
   }
 
   onMount(async () => {
@@ -355,25 +369,11 @@
                       <!-- Nodes -->
                       <div>
                         <h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
-                        <div class="space-y-2">
-                          {#each renderNodeTree(partition.data.nodes) as node}
-                            <div style="margin-left: {node.level * 1.5}rem">
-                              <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-gray-900">{node.id}</span>
-                                <span class="text-xs text-gray-500">({node.classifier.key})</span>
-                              </div>
-                              {#if node.properties.length > 0}
-                                <div class="ml-4 mt-1 space-y-1">
-                                  {#each node.properties as prop}
-                                    <div class="text-xs text-gray-600">
-                                      {prop.property.key}: {prop.value}
-                                    </div>
-                                  {/each}
-                                </div>
-                              {/if}
-                            </div>
-                          {/each}
-                        </div>
+                        <NodeTree 
+                          chunk={partition.data} 
+                          bind:expandedNodes={expandedNodes}
+                          on:nodeClick={handleNodeClick}
+                        />
                       </div>
                     </div>
                   </div>
