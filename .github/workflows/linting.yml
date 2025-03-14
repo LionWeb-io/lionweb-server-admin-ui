@@ -1,0 +1,16 @@
+name: Linting
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install node v20
+        uses: actions/setup-node@v1
+        with:
+          node-version: 20
+      - name: Install
+        run: npm install
+      - name: Check
+        run: npm run lint-check
