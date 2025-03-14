@@ -1,222 +1,247 @@
 <!-- NodeTree.svelte -->
 <script lang="ts">
-  import type { SerializationChunk } from '@lionweb/core';
-  import { createEventDispatcher } from 'svelte';
+	import type { SerializationChunk } from '@lionweb/core';
+	import { createEventDispatcher } from 'svelte';
 
-  export let chunk: SerializationChunk;
-  export let expandedNodes: Set<string> = new Set();
-  export let level: number = 0;
-  export let nodeId: string | null = null;
+	export let chunk: SerializationChunk;
+	export let expandedNodes: Set<string> = new Set();
+	export let level: number = 0;
+	export let nodeId: string | null = null;
 
-  const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher();
 
-  function toggleNode(id: string) {
-    if (expandedNodes.has(id)) {
-      expandedNodes.delete(id);
-    } else {
-      expandedNodes.add(id);
-    }
-    expandedNodes = expandedNodes; // Trigger reactivity
-  }
+	function toggleNode(id: string) {
+		if (expandedNodes.has(id)) {
+			expandedNodes.delete(id);
+		} else {
+			expandedNodes.add(id);
+		}
+		expandedNodes = expandedNodes; // Trigger reactivity
+	}
 
-  function getChildNodes(id: string): SerializationChunk['nodes'] {
-    if (!chunk?.nodes) return [];
-    const children = chunk.nodes.filter(node => node.parent === id);
-    return children;
-  }
+	function getChildNodes(id: string): SerializationChunk['nodes'] {
+		if (!chunk?.nodes) return [];
+		const children = chunk.nodes.filter((node) => node.parent === id);
+		return children;
+	}
 
-  function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
-    return getChildNodes(node.id).length > 0;
-  }
+	function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
+		return getChildNodes(node.id).length > 0;
+	}
 
-  function getPropertyKey(property: any): string {
-    return property?.property?.key || 'Unknown';
-  }
+	function getPropertyKey(property: any): string {
+		return property?.property?.key || 'Unknown';
+	}
 
-  function getPropertyLanguage(property: any): string {
-    return property?.property?.language || 'Unknown';
-  }
+	function getPropertyLanguage(property: any): string {
+		return property?.property?.language || 'Unknown';
+	}
 
-  function getPropertyVersion(property: any): string {
-    return property?.property?.version || 'Unknown';
-  }
+	function getPropertyVersion(property: any): string {
+		return property?.property?.version || 'Unknown';
+	}
 
-  function getPropertyValue(property: any): any {
-    return property?.value;
-  }
+	function getPropertyValue(property: any): any {
+		return property?.value;
+	}
 
-  function getReferenceKey(reference: any): string {
-    return reference?.reference?.key || 'Unknown';
-  }
+	function getReferenceKey(reference: any): string {
+		return reference?.reference?.key || 'Unknown';
+	}
 
-  function getReferenceLanguage(reference: any): string {
-    return reference?.reference?.language || 'Unknown';
-  }
+	function getReferenceLanguage(reference: any): string {
+		return reference?.reference?.language || 'Unknown';
+	}
 
-  function getReferenceVersion(reference: any): string {
-    return reference?.reference?.version || 'Unknown';
-  }
+	function getReferenceVersion(reference: any): string {
+		return reference?.reference?.version || 'Unknown';
+	}
 
-  function getReferenceValues(reference: any): any[] {
-    return reference?.values || reference?.targets || [];
-  }
+	function getReferenceValues(reference: any): any[] {
+		return reference?.values || reference?.targets || [];
+	}
 
-  function renderPropertyValue(property: { value: any }): string {
-    if (property.value === null) return 'null';
-    if (typeof property.value === 'object') return JSON.stringify(property.value);
-    return String(property.value);
-  }
+	function renderPropertyValue(property: { value: any }): string {
+		if (property.value === null) return 'null';
+		if (typeof property.value === 'object') return JSON.stringify(property.value);
+		return String(property.value);
+	}
 
-  function getNodeColor(id: string): string {
-    // Generate a consistent hash from the node ID
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Convert hash to HSL color with high lightness for pastel colors
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 70%, 95%)`;
-  }
+	function getNodeColor(id: string): string {
+		// Generate a consistent hash from the node ID
+		let hash = 0;
+		for (let i = 0; i < id.length; i++) {
+			hash = id.charCodeAt(i) + ((hash << 5) - hash);
+		}
 
-  function handleNodeClick(id: string) {
-    dispatch('nodeClick', { nodeId: id });
-  }
+		// Convert hash to HSL color with high lightness for pastel colors
+		const hue = Math.abs(hash % 360);
+		return `hsl(${hue}, 70%, 95%)`;
+	}
 
-  $: nodes = nodeId === null 
-    ? chunk?.nodes?.filter(node => !node.parent) || [] // Root nodes
-    : getChildNodes(nodeId);
+	function handleNodeClick(id: string) {
+		dispatch('nodeClick', { nodeId: id });
+	}
+
+	$: nodes =
+		nodeId === null
+			? chunk?.nodes?.filter((node) => !node.parent) || [] // Root nodes
+			: getChildNodes(nodeId);
 </script>
 
 <div class="space-y-2">
-  {#each nodes as node}
-    <div class="border rounded p-2" style="margin-left: {level * 20}px; background-color: {getNodeColor(node.id)}" id="node-{node.id}">
-      <div class="flex items-start space-x-2">
-        {#if hasChildren(node)}
-          <button
-            class="text-gray-500 hover:text-gray-700 mt-1"
-            on:click={() => toggleNode(node.id)}
-          >
-            {expandedNodes.has(node.id) ? '▼' : '▶'}
-          </button>
-        {:else}
-          <span class="w-4"></span>
-        {/if}
-        <div>
-          <p class="font-medium">ID: {node.id || 'Unknown'}</p>
-          {#if node.classifier}
-            <p class="text-sm text-gray-600">Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version || 'Unknown'}</p>
-          {/if}
-          {#if node.properties?.length}
-            <div class="mt-2">
-              <div class="properties-container">
-                {#each node.properties as property}
-                  <div class="property-row">
-                    <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                      (<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(property)}
-                    </span>
-                    <span class="property-equals">=</span>
-                    <span class="property-value bg-blue-50 text-gray-700 px-2 py-0.5 rounded border border-blue-100 shadow-sm">
-                      {renderPropertyValue({ value: getPropertyValue(property) })}
-                    </span>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
-          {#if node.references.length > 0}
-            <div class="mt-2">
-              <div class="properties-container">
-                {#each node.references as reference}
-                  {#if getReferenceValues(reference).length > 0}
-                    <div class="property-row">
-                      <span class="property-key bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 shadow-sm">
-                        (<i>{getReferenceLanguage(reference)}</i>|<i>{getReferenceVersion(reference)}</i>) {getReferenceKey(reference)}
-                      </span>
-                      <span class="reference-arrow">→</span>
-                      <div class="reference-targets">
-                        {#each getReferenceValues(reference) as target}
-                          <span class="reference-target">
-                            {#if target.resolveInfo}
-                              <span>{target.resolveInfo}</span>
-                            {/if}
-                            {#if target.reference}
-                              <span class="reference-link" on:click={() => handleNodeClick(target.reference)}>
-                                ({target.reference})
-                              </span>
-                            {/if}
-                          </span>
-                        {/each}
-                      </div>
-                    </div>
-                  {/if}
-                {/each}
-              </div>
-            </div>
-          {/if}
-        </div>
-      </div>
-      {#if expandedNodes.has(node.id)}
-        <svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick />
-      {/if}
-    </div>
-  {/each}
+	{#each nodes as node}
+		<div
+			class="rounded border p-2"
+			style="margin-left: {level * 20}px; background-color: {getNodeColor(node.id)}"
+			id="node-{node.id}"
+		>
+			<div class="flex items-start space-x-2">
+				{#if hasChildren(node)}
+					<button
+						class="mt-1 text-gray-500 hover:text-gray-700"
+						on:click={() => toggleNode(node.id)}
+					>
+						{expandedNodes.has(node.id) ? '▼' : '▶'}
+					</button>
+				{:else}
+					<span class="w-4"></span>
+				{/if}
+				<div>
+					<p class="font-medium">ID: {node.id || 'Unknown'}</p>
+					{#if node.classifier}
+						<p class="text-sm text-gray-600">
+							Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version ||
+								'Unknown'}
+						</p>
+					{/if}
+					{#if node.properties?.length}
+						<div class="mt-2">
+							<div class="properties-container">
+								{#each node.properties as property}
+									<div class="property-row">
+										<span
+											class="property-key rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 shadow-sm"
+										>
+											(<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(
+												property
+											)}
+										</span>
+										<span class="property-equals">=</span>
+										<span
+											class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
+										>
+											{renderPropertyValue({ value: getPropertyValue(property) })}
+										</span>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+					{#if node.references.length > 0}
+						<div class="mt-2">
+							<div class="properties-container">
+								{#each node.references as reference}
+									{#if getReferenceValues(reference).length > 0}
+										<div class="property-row">
+											<span
+												class="property-key rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 shadow-sm"
+											>
+												(<i>{getReferenceLanguage(reference)}</i>|<i
+													>{getReferenceVersion(reference)}</i
+												>) {getReferenceKey(reference)}
+											</span>
+											<span class="reference-arrow">→</span>
+											<div class="reference-targets">
+												{#each getReferenceValues(reference) as target}
+													<span class="reference-target">
+														{#if target.resolveInfo}
+															<span>{target.resolveInfo}</span>
+														{/if}
+														{#if target.reference}
+															<span
+																class="reference-link"
+																on:click={() => handleNodeClick(target.reference)}
+															>
+																({target.reference})
+															</span>
+														{/if}
+													</span>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								{/each}
+							</div>
+						</div>
+					{/if}
+				</div>
+			</div>
+			{#if expandedNodes.has(node.id)}
+				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick />
+			{/if}
+		</div>
+	{/each}
 </div>
 
 <style>
-  .properties-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  .property-row {
-    display: flex;
-    align-items: center;
-  }
-  .property-key {
-    width: fit-content;
-  }
-  .property-equals {
-    width: 30px;
-    text-align: center;
-    flex: 0 0 auto;
-  }
-  .property-value {
-    width: fit-content;
-  }
-  .reference-arrow {
-    width: 30px;
-    text-align: center;
-    flex: 0 0 auto;
-    color: #666;
-  }
-  .reference-targets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-  }
-  .reference-target {
-    background-color: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 0.25rem;
-    padding: 0.125rem 0.5rem;
-    font-size: 0.875rem;
-    color: #0369a1;
-  }
-  .reference-link {
-    cursor: pointer;
-    text-decoration: underline;
-    color: #0284c7;
-  }
-  .reference-link:hover {
-    color: #0369a1;
-  }
-  .highlight-node {
-    animation: highlight 2s ease-out;
-  }
-  
-  @keyframes highlight {
-    0% { background-color: #fef3c7; }
-    100% { background-color: inherit; }
-  }
-</style> 
+	.properties-container {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.property-row {
+		display: flex;
+		align-items: center;
+	}
+	.property-key {
+		width: fit-content;
+	}
+	.property-equals {
+		width: 30px;
+		text-align: center;
+		flex: 0 0 auto;
+	}
+	.property-value {
+		width: fit-content;
+	}
+	.reference-arrow {
+		width: 30px;
+		text-align: center;
+		flex: 0 0 auto;
+		color: #666;
+	}
+	.reference-targets {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+	.reference-target {
+		background-color: #f0f9ff;
+		border: 1px solid #bae6fd;
+		border-radius: 0.25rem;
+		padding: 0.125rem 0.5rem;
+		font-size: 0.875rem;
+		color: #0369a1;
+	}
+	.reference-link {
+		cursor: pointer;
+		text-decoration: underline;
+		color: #0284c7;
+	}
+	.reference-link:hover {
+		color: #0369a1;
+	}
+	.highlight-node {
+		animation: highlight 2s ease-out;
+	}
+
+	@keyframes highlight {
+		0% {
+			background-color: #fef3c7;
+		}
+		100% {
+			background-color: inherit;
+		}
+	}
+</style>
