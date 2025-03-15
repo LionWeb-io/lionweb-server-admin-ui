@@ -10,7 +10,7 @@
 					<div class="flex flex-shrink-0 items-center">
 						<a href="/repositories" class="flex items-center space-x-2">
 							<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-8 w-auto" />
-							<span class="text-xl font-bold text-gray-800">LionWeb Repo Admin</span>
+							<span class="text-xl font-bold text-gray-800">LionWeb Repo Admin Panel</span>
 						</a>
 					</div>
 					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">

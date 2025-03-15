@@ -309,12 +309,12 @@
 				<label for="repository" class="block text-sm font-medium text-gray-700">
 					Select Repository
 				</label>
-				<div class="relative w-96">
+				<div class="relative w-96 rounded-lg border border-gray-200 shadow-md bg-white p-2">
 					<select
 						id="repository"
 						value={repositoryName}
 						on:change={handleRepositoryChange}
-						class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+						class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-lg focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
 					>
 						{#each repositories as repo}
 							<option value={repo.name}>
