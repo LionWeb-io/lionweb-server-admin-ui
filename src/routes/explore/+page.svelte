@@ -199,6 +199,39 @@
 		loadPartitions();
 	}
 
+	async function handleSavePartition(partition: Partition) {
+		try {
+			// If partition is not loaded, load it first
+			if (!partition.isLoaded) {
+				await handleLoadPartition(partition);
+			}
+
+			// Now we know the partition is loaded, we can save it
+			const partitionData = partitions.find(p => p.id === partition.id)?.data;
+			if (!partitionData) {
+				throw new Error('Partition data not found');
+			}
+
+			// Create a Blob from the partition data
+			const blob = new Blob([JSON.stringify(partitionData, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+
+			// Create a temporary link and click it to trigger the download
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `${partition.id}.json`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+			// Clean up the URL object
+			URL.revokeObjectURL(url);
+		} catch (e) {
+			error = `Failed to save partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+			console.error('Error details:', e);
+		}
+	}
+
 	onMount(async () => {
 		await loadRepositories();
 		await loadPartitions();
@@ -320,7 +353,7 @@
 												>
 													<path
 														fill-rule="evenodd"
-														d="M10 3a1 1 0 011 1v6.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414L9 10.586V4a1 1 0 011-1zM4 16a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z"
+														d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
 														clip-rule="evenodd"
 													/>
 												</svg>
@@ -338,6 +371,29 @@
 													/>
 												</svg>
 											{/if}
+										</button>
+										<!-- Save button -->
+										<button
+											on:click={() => handleSavePartition(partition)}
+											class="inline-flex items-center rounded-full border border-transparent p-2 text-green-600 hover:bg-green-50 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none"
+											title="Save Partition"
+										>
+											<svg
+												class="h-5 w-5"
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+											>
+												<path
+													d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+												/>
+												<path
+													stroke="white"
+													stroke-width="1.5"
+													stroke-linecap="round"
+													d="M8 14l2 2 2-2"
+												/>
+											</svg>
 										</button>
 										<!-- Delete button -->
 										<button
