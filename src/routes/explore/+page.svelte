@@ -6,7 +6,8 @@
 		getPartitions,
 		createPartition,
 		deletePartition,
-		loadPartition
+		loadPartition,
+		getRepositories
 	} from '$lib/services/repository';
 	import { currentSerializationFormatVersion } from '@lionweb/core';
 	import { page } from '$app/stores';
@@ -30,6 +31,7 @@
 	let showDeleteConfirm = false;
 	let partitionToDelete: Partition | null = null;
 	let expandedNodes = new Set<string>();
+	let repositories: Array<{ name: string; lionweb_version: string; history: boolean }> = [];
 
 	async function loadPartitions() {
 		if (!repositoryName) return;
@@ -261,14 +263,38 @@
 		}
 	}
 
-	onMount(async () => {
-		await loadPartitions();
-	});
+	async function loadRepositories() {
+		try {
+			const response = await getRepositories();
+			if (response.success) {
+				repositories = response.repositories;
+			} else {
+				error = response.messages[0]?.message || 'Failed to load repositories';
+			}
+		} catch (e) {
+			error = `Failed to load repositories: ${e instanceof Error ? e.message : 'Unknown error'}`;
+			console.error('Error details:', e);
+		}
+	}
 
-	$: if ($page.url.searchParams.get('repository') !== repositoryName) {
-		repositoryName = $page.url.searchParams.get('repository') || 'default';
+	function handleRepositoryChange(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		const newRepo = select.value;
+		
+		// Update URL first
+		const url = new URL(window.location.href);
+		url.searchParams.set('repository', newRepo);
+		window.history.pushState({}, '', url.toString());
+		
+		// Then update state and load data
+		repositoryName = newRepo;
 		loadPartitions();
 	}
+
+	onMount(async () => {
+		await loadRepositories();
+		await loadPartitions();
+	});
 </script>
 
 <div class="relative min-h-screen">
@@ -276,6 +302,54 @@
 	<div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-[0.02]">
 		<img src="/images/lionweb-logo.png" alt="" class="h-[800px] w-[800px] object-contain" />
 	</div>
+
+	<div class="rounded-lg bg-white shadow">
+		<div class="px-4 py-5 sm:p-6">
+			<div class="flex items-center space-x-4">
+				<label for="repository" class="block text-sm font-medium text-gray-700">
+					Select Repository
+				</label>
+				<div class="relative w-96">
+					<select
+						id="repository"
+						value={repositoryName}
+						on:change={handleRepositoryChange}
+						class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+					>
+						{#each repositories as repo}
+							<option value={repo.name}>
+								{repo.name}
+							</option>
+						{/each}
+					</select>
+					{#if repositories.find(r => r.name === repositoryName)}
+						{@const selectedRepo = repositories.find(r => r.name === repositoryName)}
+						<div class="mt-2 flex flex-wrap gap-2">
+							<span
+								class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
+							>
+								LionWeb {selectedRepo.lionweb_version}
+							</span>
+							{#if selectedRepo.history}
+								<span
+									class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+								>
+									History Enabled
+								</span>
+							{:else}
+								<span
+									class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800"
+								>
+									History Disabled
+								</span>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+	<br/>
 
 	<!-- Content -->
 	<div class="rounded-lg bg-white shadow">
