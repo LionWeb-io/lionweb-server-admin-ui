@@ -1,14 +1,27 @@
 <!-- NodeTree.svelte -->
 <script lang="ts">
-	import type { SerializationChunk } from '@lionweb/core';
+	import type { SerializationChunk, SerializedNode, SerializedContainment, MetaPointer } from '@lionweb/core';
 	import { createEventDispatcher } from 'svelte';
+	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
 
 	export let chunk: SerializationChunk;
 	export let expandedNodes: Set<string> = new Set();
 	export let level: number = 0;
 	export let nodeId: string | null = null;
+	let allContainments = chunk.nodes.map((container:SerializedNode) => container.containments).flat();
 
 	const dispatch = createEventDispatcher();
+
+	function getRole(nodeId: string): SerializedContainment | null {
+		return allContainments.find(
+			(containment:SerializedContainment) => containment.children.includes(nodeId))?.containment;
+	}
+
+	let allRoles = new Map<string, SerializedContainment | null>();
+	chunk.nodes.forEach((node:SerializedNode) => {
+		allRoles.set(node.id, getRole(node.id));
+	});
+
 
 	function toggleNode(id: string) {
 		if (expandedNodes.has(id)) {
@@ -92,8 +105,8 @@
 <div class="space-y-2">
 	{#each nodes as node}
 		<div
-			class="rounded border p-2"
-			style="margin-left: {level * 20}px; background-color: {getNodeColor(node.id)}"
+			class="rounded /*border*/ p-2"
+			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"
 			id="node-{node.id}"
 		>
 			<div class="flex items-start space-x-2">
@@ -107,26 +120,30 @@
 				{:else}
 					<span class="w-4"></span>
 				{/if}
-				<div>
-					<p class="font-medium">ID: {node.id || 'Unknown'}</p>
-					{#if node.classifier}
-						<p class="text-sm text-gray-600">
-							Classifier: {node.classifier?.key || 'Unknown'} v{node.classifier?.version ||
-								'Unknown'}
-						</p>
-					{/if}
+				<div class="rounded border p-2" style="background-color: {getNodeColor(node.id)}">				
+					<p class="font-medium">{node.id || 'Unknown'}</p>
+					{#if allRoles.get(node.id) == null}
+						<p>[ROOT]</p>
+					{:else}
+						<MetaPointerUI language={allRoles.get(node.id)?.language} key={allRoles.get(node.id)?.key} version={allRoles.get(node.id)?.version} />
+					{/if}				
+					<p class="text-sm text-gray-600">
+						Classifier: {node.classifier?.key || 'Unknown'} {node.classifier?.language || 'Unknown'} {node.classifier?.version ||
+							'Unknown'}
+					</p>
 					{#if node.properties?.length}
 						<div class="mt-2">
 							<div class="properties-container">
 								{#each node.properties as property}
 									<div class="property-row">
-										<span
+										<!-- <span
 											class="property-key rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 shadow-sm"
 										>
 											(<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(
 												property
 											)}
-										</span>
+										</span> -->
+										<MetaPointerUI language={getPropertyLanguage(property)} key={getPropertyKey(property)} version={getPropertyVersion(property)} />
 										<span class="property-equals">=</span>
 										<span
 											class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
