@@ -127,8 +127,16 @@
 						<MetaPointerUI language={allRoles.get(node.id)?.language} key={allRoles.get(node.id)?.key} version={allRoles.get(node.id)?.version} />
 					{/if}				
 				<div class="rounded border p-2" style="background-color: white">				
-					<p class="font-medium">{node.id || 'Unknown'}</p>
-					<MetaPointerUI language={node.classifier?.language} key={node.classifier?.key} version={node.classifier?.version} />				
+					<div class="node-header">
+						<p class="font-medium">{node.id || 'Unknown'}</p>
+						<div class="classifier">
+							<MetaPointerUI language={node.classifier?.language} key={node.classifier?.key} version={node.classifier?.version} />
+						</div>
+					</div>
+					
+					{#if node.properties?.length || node.references?.length}
+						<hr class="my-2 border-t border-gray-200" />
+					{/if}
 					
 					{#if node.properties?.length}
 						<div class="mt-2">
@@ -259,5 +267,20 @@
 		100% {
 			background-color: inherit;
 		}
+	}
+
+	.node-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.node-header p {
+		margin: 0;
+	}
+
+	.classifier {
+		flex-shrink: 0;
 	}
 </style>
