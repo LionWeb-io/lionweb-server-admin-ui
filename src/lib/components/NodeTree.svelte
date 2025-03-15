@@ -59,17 +59,6 @@
 		return property?.value;
 	}
 
-	function getReferenceKey(reference: any): string {
-		return reference?.reference?.key || 'Unknown';
-	}
-
-	function getReferenceLanguage(reference: any): string {
-		return reference?.reference?.language || 'Unknown';
-	}
-
-	function getReferenceVersion(reference: any): string {
-		return reference?.reference?.version || 'Unknown';
-	}
 
 	function getReferenceValues(reference: any): any[] {
 		return reference?.values || reference?.targets || [];
@@ -97,6 +86,22 @@
 		dispatch('nodeClick', { nodeId: id });
 	}
 
+	function isFirstNodeInContainment(node: SerializedNode): boolean {
+		const role = allRoles.get(node.id);
+		if (!role) return false;
+		
+		// Get all nodes with the same containment
+		const nodesInSameContainment = chunk.nodes.filter(n => 
+			allRoles.get(n.id)?.key === role.key && 
+			allRoles.get(n.id)?.language === role.language &&
+			allRoles.get(n.id)?.version === role.version &&
+			n.parent === node.parent
+		);
+		
+		// Return true if this is the first node
+		return nodesInSameContainment[0]?.id === node.id;
+	}
+
 	$: nodes =
 		nodeId === null
 			? chunk?.nodes?.filter((node) => !node.parent) || [] // Root nodes
@@ -104,101 +109,94 @@
 </script>
 
 <div class="space-y-2">
-	{#each nodes as node}
+	{#each nodes as node : SerializedNode}
 		<div
 			class="rounded /*border*/ p-2"
 			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"
 			id="node-{node.id}"
 		>
-			<div class="flex items-start space-x-2">
-				{#if hasChildren(node)}
-					<button
-						class="mt-1 text-gray-500 hover:text-gray-700"
-						on:click={() => toggleNode(node.id)}
-					>
-						{expandedNodes.has(node.id) ? '▼' : '▶'}
-					</button>
-				{:else}
-					<span class="w-4"></span>
-				{/if}
-				{#if allRoles.get(node.id) == null}
-						<RootTag />
-					{:else}
-						<MetaPointerUI language={allRoles.get(node.id)?.language} key={allRoles.get(node.id)?.key} version={allRoles.get(node.id)?.version} />
-					{/if}				
-				<div class="rounded border p-2" style="background-color: white">				
-					<div class="node-header">
-						<p class="font-medium">{node.id || 'Unknown'}</p>
-						<div class="classifier">
-							<MetaPointerUI language={node.classifier?.language} key={node.classifier?.key} version={node.classifier?.version} />
-						</div>
+			<div class="flex flex-col space-y-2">
+				{#if allRoles.get(node.id) != null && isFirstNodeInContainment(node)}
+					<div class="containment-role">
+						<MetaPointerUI 
+							language={allRoles.get(node.id)?.language} 
+							key={allRoles.get(node.id)?.key} 
+							version={allRoles.get(node.id)?.version} 
+						/>
 					</div>
-					
-					{#if node.properties?.length || node.references?.length}
-						<hr class="my-2 border-t border-gray-200" />
+				{/if}
+				<div class="flex items-start space-x-2">
+					{#if hasChildren(node)}
+						<button
+							class="mt-1 text-gray-500 hover:text-gray-700"
+							on:click={() => toggleNode(node.id)}
+						>
+							{expandedNodes.has(node.id) ? '▼' : '▶'}
+						</button>
+					{:else}
+						<span class="w-4"></span>
 					{/if}
-					
-					{#if node.properties?.length}
-						<div class="mt-2">
-							<div class="properties-container">
-								{#each node.properties as property}
-									<div class="property-row">
-										<!-- <span
-											class="property-key rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 shadow-sm"
-										>
-											(<i>{getPropertyLanguage(property)}</i>|<i>{getPropertyVersion(property)}</i>) {getPropertyKey(
-												property
-											)}
-										</span> -->
-										<MetaPointerUI language={getPropertyLanguage(property)} key={getPropertyKey(property)} version={getPropertyVersion(property)} />
-										<span class="property-equals">=</span>
-										<span
-											class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
-										>
-											{renderPropertyValue({ value: getPropertyValue(property) })}
-										</span>
-									</div>
-								{/each}
+					<div class="rounded border p-2 flex-grow" style="background-color: white">
+						<div class="node-header">
+							<p class="font-medium">{node.id || 'Unknown'}</p>
+							<div class="classifier">
+								<MetaPointerUI language={node.classifier?.language} key={node.classifier?.key} version={node.classifier?.version} />
 							</div>
 						</div>
-					{/if}
-					{#if node.references.length > 0}
-						<div class="mt-2">
-							<div class="properties-container">
-								{#each node.references as reference}
-									{#if getReferenceValues(reference).length > 0}
+						
+						{#if node.properties?.length || node.references?.length}
+							<hr class="my-2 border-t border-gray-200" />
+						{/if}
+						
+						{#if node.properties?.length}
+							<div class="mt-2">
+								<div class="properties-container">
+									{#each node.properties as property}
 										<div class="property-row">
+											<MetaPointerUI language={property.property.language} key={property.property.key} version={property.property.version} />
+											<span class="property-equals">=</span>
 											<span
-												class="property-key rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-gray-700 shadow-sm"
+												class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
 											>
-												(<i>{getReferenceLanguage(reference)}</i>|<i
-													>{getReferenceVersion(reference)}</i
-												>) {getReferenceKey(reference)}
+												{renderPropertyValue({ value: getPropertyValue(property) })}
 											</span>
-											<span class="reference-arrow">→</span>
-											<div class="reference-targets">
-												{#each getReferenceValues(reference) as target}
-													<span class="reference-target">
-														{#if target.resolveInfo}
-															<span>{target.resolveInfo}</span>
-														{/if}
-														{#if target.reference}
-															<span
-																class="reference-link"
-																on:click={() => handleNodeClick(target.reference)}
-															>
-																({target.reference})
-															</span>
-														{/if}
-													</span>
-												{/each}
-											</div>
 										</div>
-									{/if}
-								{/each}
+									{/each}
+								</div>
 							</div>
-						</div>
-					{/if}
+						{/if}
+						{#if node.references.length > 0}
+							<div class="mt-2">
+								<div class="properties-container">
+									{#each node.references as reference : SerializedReference}
+										{#if getReferenceValues(reference).length > 0}
+											<div class="property-row">
+												<MetaPointerUI language={reference.reference.language} key={reference.reference.key} version={reference.reference.version} />
+												<span class="reference-arrow">→</span>
+												<div class="reference-targets">
+													{#each getReferenceValues(reference) as target}
+														<span class="reference-target">
+															{#if target.resolveInfo}
+																<span>{target.resolveInfo}</span>
+															{/if}
+															{#if target.reference}
+																<span
+																	class="reference-link"
+																	on:click={() => handleNodeClick(target.reference)}
+																>
+																	({target.reference})
+																</span>
+															{/if}
+														</span>
+													{/each}
+												</div>
+											</div>
+										{/if}
+									{/each}
+								</div>
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 			{#if expandedNodes.has(node.id)}
@@ -282,5 +280,10 @@
 
 	.classifier {
 		flex-shrink: 0;
+	}
+
+	.containment-role {
+		margin-left: 1.5rem;
+		margin-bottom: 0.5rem;
 	}
 </style>
