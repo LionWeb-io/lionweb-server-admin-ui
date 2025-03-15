@@ -3,6 +3,7 @@
 	import type { SerializationChunk, SerializedNode, SerializedContainment, MetaPointer } from '@lionweb/core';
 	import { createEventDispatcher } from 'svelte';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
+	import RootTag from '$lib/components/RootTag.svelte';
 
 	export let chunk: SerializationChunk;
 	export let expandedNodes: Set<string> = new Set();
@@ -120,17 +121,15 @@
 				{:else}
 					<span class="w-4"></span>
 				{/if}
-				<div class="rounded border p-2" style="background-color: {getNodeColor(node.id)}">				
-					<p class="font-medium">{node.id || 'Unknown'}</p>
-					{#if allRoles.get(node.id) == null}
-						<p>[ROOT]</p>
+				{#if allRoles.get(node.id) == null}
+						<RootTag />
 					{:else}
 						<MetaPointerUI language={allRoles.get(node.id)?.language} key={allRoles.get(node.id)?.key} version={allRoles.get(node.id)?.version} />
 					{/if}				
-					<p class="text-sm text-gray-600">
-						Classifier: {node.classifier?.key || 'Unknown'} {node.classifier?.language || 'Unknown'} {node.classifier?.version ||
-							'Unknown'}
-					</p>
+				<div class="rounded border p-2" style="background-color: white">				
+					<p class="font-medium">{node.id || 'Unknown'}</p>
+					<MetaPointerUI language={node.classifier?.language} key={node.classifier?.key} version={node.classifier?.version} />				
+					
 					{#if node.properties?.length}
 						<div class="mt-2">
 							<div class="properties-container">

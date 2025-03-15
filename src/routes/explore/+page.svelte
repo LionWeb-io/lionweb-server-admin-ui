@@ -12,7 +12,7 @@
 	import { currentSerializationFormatVersion } from '@lionweb/core';
 	import { page } from '$app/stores';
 	import NodeTree from '$lib/components/NodeTree.svelte';
-
+	import LanguageUI from '$lib/components/LanguageUI.svelte';
 	// Define valid serialization format versions
 	const validVersions = ['2023.1', '2024.1'];
 	const DEFAULT_VERSION = '2024.1'; // Most recent version
@@ -430,11 +430,7 @@
 													<h4 class="mb-2 text-sm font-medium text-gray-700">Languages</h4>
 													<div class="flex flex-wrap gap-2">
 														{#each partition.data.languages as language}
-															<span
-																class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
-															>
-																{language.key} v{language.version}
-															</span>
+															<LanguageUI language={language.key} version={language.version} />
 														{/each}
 													</div>
 												</div>
