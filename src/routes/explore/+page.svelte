@@ -20,13 +20,7 @@
 	let repositoryName = $page.url.searchParams.get('repository') || 'default';
 	let partitions: Array<Partition & { isLoaded?: boolean; data?: SerializationChunk }> = [];
 	let loading = false;
-	let error: string | null = null;
-	let showCreateModal = false;
-	let newPartition: SerializationChunk = {
-		serializationFormatVersion: DEFAULT_VERSION,
-		languages: [],
-		nodes: []
-	};
+	let error: string | null = null;	
 	let dragActive = false;
 	let showDeleteConfirm = false;
 	let partitionToDelete: Partition | null = null;
@@ -52,97 +46,19 @@
 		}
 	}
 
-	function addLanguage() {
-		newPartition.languages = [...newPartition.languages, { key: '', version: '' }];
-	}
-
-	function removeLanguage(index: number) {
-		newPartition.languages = newPartition.languages.filter((_, i) => i !== index);
-	}
-
-	function addNode() {
-		newPartition.nodes = [
-			...newPartition.nodes,
-			{
-				id: '',
-				classifier: { language: '', version: '', key: '' },
-				properties: [],
-				containments: [],
-				references: [],
-				annotations: [],
-				parent: null
-			}
-		];
-	}
-
-	function removeNode(index: number) {
-		newPartition.nodes = newPartition.nodes.filter((_, i) => i !== index);
-	}
-
-	// Helper function to ensure a language is declared
-	function ensureLanguageDeclared(language: string, version: string) {
-		const exists = newPartition.languages.some((l) => l.key === language && l.version === version);
-		if (!exists) {
-			newPartition.languages = [...newPartition.languages, { key: language, version }];
-		}
-	}
-
-	// Watch for changes in node classifiers to ensure languages are declared
-	$: {
-		for (const node of newPartition.nodes) {
-			if (node.classifier.language && node.classifier.version) {
-				ensureLanguageDeclared(node.classifier.language, node.classifier.version);
-			}
-		}
-	}
-
-	async function handleCreatePartition() {
+	async function handleCreatePartition(originalChunk: SerializationChunk) {
 		try {
 			loading = true;
 			error = null;
 
-			console.log('Starting partition creation with data:', {
-				repositoryName,
-				newPartition: JSON.stringify(newPartition, null, 2)
-			});
-
-			// Validate the partition data
-			if (!newPartition.nodes.length) {
-				throw new Error('Partition must contain at least one node');
-			}
-
-			// Validate node data
-			for (const node of newPartition.nodes) {
-				if (!node.id) throw new Error('Node ID is required');
-				if (!node.classifier.language) throw new Error('Classifier language is required');
-				if (!node.classifier.version) throw new Error('Classifier version is required');
-				if (!node.classifier.key) throw new Error('Classifier key is required');
-
-				// Ensure the language is declared
-				ensureLanguageDeclared(node.classifier.language, node.classifier.version);
-			}
-
-			// Create the partition
-			console.log('Calling createPartition service...');
-			const createdPartition = await createPartition(repositoryName, newPartition);
-			console.log('Partition created successfully:', createdPartition);
-
-			// Close modal and reset form
-			showCreateModal = false;
-			newPartition = {
-				serializationFormatVersion: DEFAULT_VERSION,
-				languages: [],
-				nodes: []
-			};
-
-			// Reload the list
+			await createPartition(repositoryName, originalChunk);
 			console.log('Reloading partitions list...');
 			await loadPartitions();
 
 			// Show success message
 			error = null;
 		} catch (e) {
-			console.error('Error in handleCreatePartition:', e);
+			console.error('Error in handleCreatePartition:jsonContent', e);
 			error = `Failed to create partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
 		} finally {
 			loading = false;
@@ -184,15 +100,7 @@
 				throw new Error('Invalid file format. Expected a LionWeb serialization chunk.');
 			}
 
-			// Set the new partition data
-			newPartition = {
-				serializationFormatVersion: jsonContent.serializationFormatVersion,
-				languages: jsonContent.languages || [],
-				nodes: jsonContent.nodes
-			};
-
-			// Open the create modal with the loaded data
-			showCreateModal = true;
+			handleCreatePartition(jsonContent);
 		} catch (err) {
 			error = `Failed to process file: ${err instanceof Error ? err.message : 'Unknown error'}`;
 		}
@@ -355,25 +263,7 @@
 	<div class="rounded-lg bg-white shadow">
 		<div class="px-4 py-5 sm:p-6">
 			<div class="mb-6 flex items-center justify-between">
-				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>
-				<button
-					on:click={() => (showCreateModal = true)}
-					class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-				>
-					<svg
-						class="mr-2 h-5 w-5"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 20 20"
-						fill="currentColor"
-					>
-						<path
-							fill-rule="evenodd"
-							d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-							clip-rule="evenodd"
-						/>
-					</svg>
-					Create Partition
-				</button>
+				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>				
 			</div>
 
 			{#if loading}
@@ -623,182 +513,4 @@
 	</div>
 {/if}
 
-{#if showCreateModal}
-	<div class="bg-opacity-75 fixed inset-0 flex items-center justify-center bg-gray-500">
-		<div class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-			<h3 class="mb-4 text-lg font-medium text-gray-900">Create New Partition</h3>
-			<form on:submit|preventDefault={handleCreatePartition}>
-				<div class="space-y-6">
-					<div>
-						<label for="version" class="block text-sm font-medium text-gray-700"
-							>Serialization Format Version</label
-						>
-						<select
-							id="version"
-							bind:value={newPartition.serializationFormatVersion}
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-							required
-						>
-							{#each validVersions as version}
-								<option value={version}>{version}</option>
-							{/each}
-						</select>
-					</div>
 
-					<div>
-						<div class="mb-2 flex items-center justify-between">
-							<label class="block text-sm font-medium text-gray-700">Languages</label>
-							<button
-								type="button"
-								on:click={addLanguage}
-								class="inline-flex items-center rounded-md border border-transparent bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 hover:bg-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-							>
-								Add Language
-							</button>
-						</div>
-						<div class="space-y-4">
-							{#each newPartition.languages as language, index}
-								<div class="flex items-start gap-4">
-									<div class="flex-1">
-										<input
-											type="text"
-											bind:value={language.key}
-											placeholder="Language key"
-											class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-											required
-										/>
-									</div>
-									<div class="flex-1">
-										<input
-											type="text"
-											bind:value={language.version}
-											placeholder="Version"
-											class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-											required
-										/>
-									</div>
-									<button
-										type="button"
-										on:click={() => removeLanguage(index)}
-										class="inline-flex items-center rounded-full border border-transparent p-1 text-red-600 hover:bg-red-100 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
-									>
-										<svg
-											class="h-5 w-5"
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-										>
-											<path
-												fill-rule="evenodd"
-												d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</button>
-								</div>
-							{/each}
-						</div>
-					</div>
-
-					<div>
-						<div class="mb-2 flex items-center justify-between">
-							<label class="block text-sm font-medium text-gray-700">Nodes</label>
-							<button
-								type="button"
-								on:click={addNode}
-								class="inline-flex items-center rounded-md border border-transparent bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 hover:bg-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-							>
-								Add Node
-							</button>
-						</div>
-						<div class="space-y-4">
-							{#each newPartition.nodes as node, index}
-								<div class="rounded-lg border p-4">
-									<div class="mb-4 flex items-center justify-between">
-										<h4 class="text-sm font-medium text-gray-900">Node {index + 1}</h4>
-										<button
-											type="button"
-											on:click={() => removeNode(index)}
-											class="inline-flex items-center rounded-full border border-transparent p-1 text-red-600 hover:bg-red-100 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
-										>
-											<svg
-												class="h-5 w-5"
-												xmlns="http://www.w3.org/2000/svg"
-												viewBox="0 0 20 20"
-												fill="currentColor"
-											>
-												<path
-													fill-rule="evenodd"
-													d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-													clip-rule="evenodd"
-												/>
-											</svg>
-										</button>
-									</div>
-									<div class="space-y-4">
-										<div>
-											<label class="block text-sm font-medium text-gray-700">ID</label>
-											<input
-												type="text"
-												bind:value={node.id}
-												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-												required
-											/>
-										</div>
-										<div>
-											<label class="block text-sm font-medium text-gray-700"
-												>Classifier Language</label
-											>
-											<input
-												type="text"
-												bind:value={node.classifier.language}
-												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-												required
-											/>
-										</div>
-										<div>
-											<label class="block text-sm font-medium text-gray-700"
-												>Classifier Version</label
-											>
-											<input
-												type="text"
-												bind:value={node.classifier.version}
-												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-												required
-											/>
-										</div>
-										<div>
-											<label class="block text-sm font-medium text-gray-700">Classifier Key</label>
-											<input
-												type="text"
-												bind:value={node.classifier.key}
-												class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-												required
-											/>
-										</div>
-									</div>
-								</div>
-							{/each}
-						</div>
-					</div>
-				</div>
-
-				<div class="mt-6 flex justify-end space-x-3">
-					<button
-						type="button"
-						on:click={() => (showCreateModal = false)}
-						class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-					>
-						Cancel
-					</button>
-					<button
-						type="submit"
-						class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-					>
-						Create Partition
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
