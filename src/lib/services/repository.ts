@@ -1,10 +1,7 @@
 import type { Partition, PartitionListResponse } from '$lib/types';
-import { LionwebResponse } from '@lionweb/repository-common';
+import type { LionwebResponse, RepositoryConfiguration, LionWebVersionType, ListRepositoriesResponse } from '@lionweb/repository-shared';
 import { RepositoryClient } from '@lionweb/repository-client';
 import type {
-	ListRepositoriesResponse,
-	RepositoryConfiguration,
-	LionWebVersionType,
 	LionWebJsonChunk
 } from '@lionweb/repository-client';
 
@@ -141,7 +138,7 @@ export async function createPartition(
 
 	// Extract the partition ID from the response messages
 	const versionMessage = responseData.messages?.find(
-		(msg: LionwebMessage) => msg.kind === 'RepoVersion'
+		(msg) => msg.kind === 'RepoVersion'
 	);
 	if (!versionMessage) {
 		throw new Error('No version information found in response');
@@ -153,8 +150,8 @@ export async function createPartition(
 	};
 
 	const storeResponse = await client.bulk.store(chunk);
-	if (!storeResponse.success) {
-		throw new Error(JSON.stringify(storeResponse.messages || 'Failed to store the partition data'));
+	if (!storeResponse.body.success) {
+		throw new Error(JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data'));
 	}
 
 	return partition;

@@ -36,6 +36,8 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
-		"@lionweb/core": "^0.6.12"
+		"@lionweb/core": "^0.6.12",
+		"@lionweb/repository-client": "file:/Users/ftomassetti/repos/lionweb-repository/packages/client",
+		"@lionweb/repository-shared": "file:/Users/ftomassetti/repos/lionweb-repository/packages/shared"
 	}
 }
