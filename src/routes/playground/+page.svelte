@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { SerializationChunk } from '@lionweb/core';
 	import NodeTree from '$lib/components/NodeTree.svelte';
+	import LanguageUI from '$lib/components/LanguageUI.svelte';
 
 	let dropZone: HTMLElement;
 	let isDragging = false;
@@ -101,155 +102,6 @@
 		children: NodeWithChildren[];
 	};
 
-	function getChildNodes(nodeId: string): SerializationChunk['nodes'] {
-		if (!chunk?.nodes) return [];
-		const children = chunk.nodes.filter((node) => node.parent === nodeId);
-		console.log(
-			`Getting children for node ${nodeId}:`,
-			children.map((n) => n.id)
-		);
-		return children;
-	}
-
-	function renderNodeTree(nodeId: string | null, level: number = 0): NodeWithChildren[] {
-		if (!chunk?.nodes) return [];
-
-		// Get root nodes or nodes from containment
-		const nodes =
-			nodeId === null
-				? chunk.nodes.filter((node) => !node.parent) // Root nodes
-				: [];
-
-		return nodes.map((node) => {
-			return {
-				...node,
-				level,
-				properties: node.properties || [],
-				containments: node.containments || [],
-				references: node.references || [],
-				annotations: node.annotations || [],
-				children: []
-			};
-		});
-	}
-
-	function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
-		if (!chunk?.nodes || !node.containments) return false;
-		return node.containments.some((containment) => getContainedNodes(containment).length > 0);
-	}
-
-	function getRootNodeCount(): number {
-		if (!chunk?.nodes) return 0;
-		return chunk.nodes.filter((node) => !node.parent).length;
-	}
-
-	function renderPropertyValue(property: { value: any }): string {
-		if (property.value === null) return 'null';
-		if (typeof property.value === 'object') return JSON.stringify(property.value);
-		return String(property.value);
-	}
-
-	function renderContainmentValue(containment: { children: string[] }): string {
-		return containment.children.join(', ');
-	}
-
-	function getPropertyKey(property: any): string {
-		return property?.property?.key || 'Unknown';
-	}
-
-	function getPropertyLanguage(property: any): string {
-		return property?.property?.language || 'Unknown';
-	}
-
-	function getPropertyVersion(property: any): string {
-		return property?.property?.version || 'Unknown';
-	}
-
-	function getPropertyValue(property: any): any {
-		return property?.value;
-	}
-
-	function getReferenceKey(reference: any): string {
-		return reference?.reference?.key || 'Unknown';
-	}
-
-	function getReferenceLanguage(reference: any): string {
-		return reference?.reference?.language || 'Unknown';
-	}
-
-	function getReferenceVersion(reference: any): string {
-		return reference?.reference?.version || 'Unknown';
-	}
-
-	function getReferenceValues(reference: any): any[] {
-		return reference?.values || reference?.targets || [];
-	}
-
-	function renderReferenceValue(target: any): string {
-		if (!target) return '';
-		if (typeof target === 'string') return target;
-		return target.resolveInfo || target.reference || JSON.stringify(target);
-	}
-
-	function getContainmentKey(containment: any): string {
-		return containment?.containment?.key || 'Unknown';
-	}
-
-	function getContainmentLanguage(containment: any): string {
-		return containment?.containment?.language || 'Unknown';
-	}
-
-	function getContainmentVersion(containment: any): string {
-		return containment?.containment?.version || 'Unknown';
-	}
-
-	function getContainedNodes(containment: any): SerializationChunk['nodes'] {
-		if (!chunk || !containment?.children) return [];
-		return chunk.nodes.filter((node) => containment.children.includes(node.id));
-	}
-
-	function debugProperty(property: any) {
-		console.log('Property object:', property);
-		console.log('Property details:', property.property);
-		console.log('Value:', property.value);
-	}
-
-	function getNodeColor(nodeId: string): string {
-		// Generate a consistent hash from the node ID
-		let hash = 0;
-		for (let i = 0; i < nodeId.length; i++) {
-			hash = nodeId.charCodeAt(i) + ((hash << 5) - hash);
-		}
-
-		// Convert hash to HSL color with high lightness for pastel colors
-		const hue = Math.abs(hash % 360);
-		return `hsl(${hue}, 70%, 95%)`;
-	}
-
-	function debugReference(reference: any) {
-		console.log('Reference object:', reference);
-		console.log('Reference details:', reference.reference);
-		console.log('Values:', reference.values);
-	}
-
-	function debugContainment(containment: any) {
-		console.log('Containment object:', containment);
-		console.log('Containment details:', containment.containment);
-		console.log('Children:', containment.children);
-	}
-
-	function getNodePath(nodeId: string): string[] {
-		if (!chunk?.nodes) return [];
-		const path: string[] = [];
-		let currentNode = chunk.nodes.find((n) => n.id === nodeId);
-		while (currentNode) {
-			path.unshift(currentNode.id);
-			const parentId = currentNode.parent;
-			currentNode = parentId ? chunk.nodes.find((n) => n.id === parentId) : undefined;
-		}
-		return path;
-	}
-
 	function handleNodeClick(event: CustomEvent<{ nodeId: string }>) {
 		const nodeId = event.detail.nodeId;
 		if (chunk) {
@@ -339,34 +191,14 @@
 						{#if !chunk?.languages?.length}
 							<p class="text-gray-500 italic">No languages specified</p>
 						{:else}
-							<div class="overflow-x-auto">
-								<table class="min-w-full divide-y divide-gray-200">
-									<thead class="bg-gray-50">
-										<tr>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-												>Key</th
-											>
-											<th
-												class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-												>Version</th
-											>
-										</tr>
-									</thead>
-									<tbody class="divide-y divide-gray-200 bg-white">
-										{#each chunk.languages as language}
-											<tr>
-												<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-900"
-													>{language?.key || 'Unknown'}</td
-												>
-												<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-900"
-													>{language?.version || 'Unknown'}</td
-												>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
+							<div>
+								<h4 class="mb-2 text-sm font-medium text-gray-700">Languages</h4>
+								<div class="flex flex-wrap gap-2">
+									{#each chunk.languages as language}
+										<LanguageUI language={language.key} version={language.version} />
+									{/each}
+								</div>
+							</div>							
 						{/if}
 					</div>
 
