@@ -198,7 +198,7 @@
 										<LanguageUI language={language.key} version={language.version} />
 									{/each}
 								</div>
-							</div>							
+							</div>
 						{/if}
 					</div>
 

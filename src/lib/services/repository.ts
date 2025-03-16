@@ -1,9 +1,12 @@
 import type { Partition, PartitionListResponse } from '$lib/types';
-import type { LionwebResponse, RepositoryConfiguration, LionWebVersionType, ListRepositoriesResponse } from '@lionweb/repository-shared';
-import { RepositoryClient } from '@lionweb/repository-client';
 import type {
-	LionWebJsonChunk
-} from '@lionweb/repository-client';
+	LionwebResponse,
+	RepositoryConfiguration,
+	LionWebVersionType,
+	ListRepositoriesResponse
+} from '@lionweb/repository-shared';
+import { RepositoryClient } from '@lionweb/repository-client';
+import type { LionWebJsonChunk } from '@lionweb/repository-client';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
 const CLIENT_ID = 'lionWebRepoAdminUI';
@@ -137,9 +140,7 @@ export async function createPartition(
 	}
 
 	// Extract the partition ID from the response messages
-	const versionMessage = responseData.messages?.find(
-		(msg) => msg.kind === 'RepoVersion'
-	);
+	const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
 	if (!versionMessage) {
 		throw new Error('No version information found in response');
 	}
@@ -151,7 +152,9 @@ export async function createPartition(
 
 	const storeResponse = await client.bulk.store(chunk);
 	if (!storeResponse.body.success) {
-		throw new Error(JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data'));
+		throw new Error(
+			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
+		);
 	}
 
 	return partition;

@@ -20,7 +20,7 @@
 	let repositoryName = $page.url.searchParams.get('repository') || 'default';
 	let partitions: Array<Partition & { isLoaded?: boolean; data?: SerializationChunk }> = [];
 	let loading = false;
-	let error: string | null = null;	
+	let error: string | null = null;
 	let dragActive = false;
 	let showDeleteConfirm = false;
 	let partitionToDelete: Partition | null = null;
@@ -188,12 +188,12 @@
 	function handleRepositoryChange(event: Event) {
 		const select = event.target as HTMLSelectElement;
 		const newRepo = select.value;
-		
+
 		// Update URL first
 		const url = new URL(window.location.href);
 		url.searchParams.set('repository', newRepo);
 		window.history.pushState({}, '', url.toString());
-		
+
 		// Then update state and load data
 		repositoryName = newRepo;
 		loadPartitions();
@@ -207,7 +207,7 @@
 			}
 
 			// Now we know the partition is loaded, we can save it
-			const partitionData = partitions.find(p => p.id === partition.id)?.data;
+			const partitionData = partitions.find((p) => p.id === partition.id)?.data;
 			if (!partitionData) {
 				throw new Error('Partition data not found');
 			}
@@ -250,12 +250,12 @@
 				<label for="repository" class="block text-sm font-medium text-gray-700">
 					Select Repository
 				</label>
-				<div class="relative w-96 rounded-lg border border-gray-200 shadow-md bg-white p-2">
+				<div class="relative w-96 rounded-lg border border-gray-200 bg-white p-2 shadow-md">
 					<select
 						id="repository"
 						value={repositoryName}
 						on:change={handleRepositoryChange}
-						class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-lg focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+						class="mt-1 block w-full rounded-md border-gray-300 py-2 pr-10 pl-3 text-lg focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none"
 					>
 						{#each repositories as repo}
 							<option value={repo.name}>
@@ -263,8 +263,8 @@
 							</option>
 						{/each}
 					</select>
-					{#if repositories.find(r => r.name === repositoryName)}
-						{@const selectedRepo = repositories.find(r => r.name === repositoryName)}
+					{#if repositories.find((r) => r.name === repositoryName)}
+						{@const selectedRepo = repositories.find((r) => r.name === repositoryName)}
 						<div class="mt-2 flex flex-wrap gap-2">
 							<span
 								class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
@@ -290,13 +290,13 @@
 			</div>
 		</div>
 	</div>
-	<br/>
+	<br />
 
 	<!-- Content -->
 	<div class="rounded-lg bg-white shadow">
 		<div class="px-4 py-5 sm:p-6">
 			<div class="mb-6 flex items-center justify-between">
-				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>				
+				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>
 			</div>
 
 			{#if loading}
@@ -564,5 +564,3 @@
 		</div>
 	</div>
 {/if}
-
-
