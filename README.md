@@ -12,13 +12,26 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - View and edit repository contents
 - Visualize the content of LionWeb files
 
+## Run the application through docker
+
+This requires you to have Docker and Docker Compose installed.
+
+If that is the case, you can just type:
+```
+docker-compose up
+```
+
+This will setup Postgres, the model-repository, and this application.
+You can now visit http://localhost:5173 and enjoy!
+
 ## Setup
 
 Currently this project depends on two unreleased modules of the LionWeb Repository. Therefore we have a script
-that download the repository and link those modules. You can do that through:
+that downloads the repository and link those modules. You can run it before the usual installation of dependencies:
 
 ```
 npm run setup
+npm install
 ```
 
 ## Development
@@ -26,6 +39,7 @@ npm run setup
 To start the development server:
 
 ```bash
+# We assume you completed the setup
 npm run dev
 ```
 
@@ -52,3 +66,8 @@ npm run preview
 - `/src/app.html` - HTML template
 - `/src/app.d.ts` - TypeScript declarations
 - `/static` - Static assets
+
+## What's next?
+
+Feel free to contribute! If you find any issues or have feature requests, 
+[open an issue in this repository](https://github.com/LionWeb-io/lionweb-repo-admin-ui/issues).
