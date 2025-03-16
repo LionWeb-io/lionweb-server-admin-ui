@@ -8,8 +8,7 @@
 	} from '@lionweb/core';
 	import { createEventDispatcher } from 'svelte';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
-	import RootTag from '$lib/components/RootTag.svelte';
-
+	
 	export let chunk: SerializationChunk;
 	export let expandedNodes: Set<string> = new Set();
 	export let level: number = 0;
@@ -48,18 +47,6 @@
 
 	function hasChildren(node: SerializationChunk['nodes'][0]): boolean {
 		return getChildNodes(node.id).length > 0;
-	}
-
-	function getPropertyKey(property: any): string {
-		return property?.property?.key || 'Unknown';
-	}
-
-	function getPropertyLanguage(property: any): string {
-		return property?.property?.language || 'Unknown';
-	}
-
-	function getPropertyVersion(property: any): string {
-		return property?.property?.version || 'Unknown';
 	}
 
 	function getPropertyValue(property: any): any {
