@@ -13,12 +13,15 @@
 	import { page } from '$app/stores';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
+	import type { LionWebJsonChunk } from '@lionweb/repository-client';
 	// Define valid serialization format versions
 	const validVersions = ['2023.1', '2024.1'];
 	const DEFAULT_VERSION = '2024.1'; // Most recent version
 
+	type PartitionWithData = Partition & { isLoaded?: boolean; data?: SerializationChunk };
+
 	let repositoryName = $page.url.searchParams.get('repository') || 'default';
-	let partitions: Array<Partition & { isLoaded?: boolean; data?: SerializationChunk }> = [];
+	let partitions: Array<PartitionWithData> = [];
 	let loading = false;
 	let error: string | null = null;
 	let dragActive = false;
@@ -46,7 +49,7 @@
 		}
 	}
 
-	async function handleCreatePartition(originalChunk: SerializationChunk) {
+	async function handleCreatePartition(originalChunk: LionWebJsonChunk) {
 		try {
 			loading = true;
 			error = null;
@@ -199,7 +202,7 @@
 		loadPartitions();
 	}
 
-	async function handleSavePartition(partition: Partition) {
+	async function handleSavePartition(partition: PartitionWithData) {
 		try {
 			// If partition is not loaded, load it first
 			if (!partition.isLoaded) {
@@ -269,9 +272,9 @@
 							<span
 								class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
 							>
-								LionWeb {selectedRepo.lionweb_version}
+								LionWeb {selectedRepo?.lionweb_version}
 							</span>
-							{#if selectedRepo.history}
+							{#if selectedRepo?.history}
 								<span
 									class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
 								>

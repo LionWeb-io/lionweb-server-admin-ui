@@ -20,13 +20,13 @@
 
 	const dispatch = createEventDispatcher();
 
-	function getRole(nodeId: string): SerializedContainment | null {
+	function getRole(nodeId: string): MetaPointer | undefined {
 		return allContainments.find((containment: SerializedContainment) =>
 			containment.children.includes(nodeId)
 		)?.containment;
 	}
 
-	let allRoles = new Map<string, SerializedContainment | null>();
+	let allRoles = new Map<string, MetaPointer | undefined>();
 	chunk.nodes.forEach((node: SerializedNode) => {
 		allRoles.set(node.id, getRole(node.id));
 	});
@@ -126,9 +126,9 @@
 				{#if allRoles.get(node.id) != null && isFirstNodeInContainment(node)}
 					<div class="containment-role">
 						<MetaPointerUI
-							language={allRoles.get(node.id)?.language}
-							key={allRoles.get(node.id)?.key}
-							version={allRoles.get(node.id)?.version}
+							language={allRoles.get(node.id)?.language || 'Unknown'}
+							key={allRoles.get(node.id)?.key || 'Unknown'}
+							version={allRoles.get(node.id)?.version || 'Unknown'}
 						/>
 					</div>
 				{/if}

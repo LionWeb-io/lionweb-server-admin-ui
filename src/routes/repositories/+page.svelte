@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getRepositories, createRepository, deleteRepository } from '$lib/services/repository';
-	import type { RepositoryConfiguration } from '@lionweb/repository-client';
+	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
 
 	let repositories: RepositoryConfiguration[] = [];
 	let loading = true;
