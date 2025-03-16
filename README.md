@@ -12,6 +12,15 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - View and edit repository contents
 - Visualize the content of LionWeb files
 
+## Setup
+
+Currently this project depends on two unreleased modules of the LionWeb Repository. Therefore we have a script
+that download the repository and link those modules. You can do that through:
+
+```
+npm run setup
+```
+
 ## Development
 
 To start the development server:

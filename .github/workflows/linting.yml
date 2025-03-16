@@ -12,6 +12,8 @@ jobs:
           node-version: 20
       - name: Install
         run: npm install
+      - name: Setup
+        run: npm run setup
       - name: Check
         run: npm run check
       - name: Lint Check
