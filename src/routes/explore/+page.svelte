@@ -170,6 +170,17 @@
 					currentNode = parentId ? partition.data.nodes.find((n) => n.id === parentId) : undefined;
 				}
 				expandedNodes = expandedNodes; // Trigger reactivity
+
+				// Scroll to the node and highlight it
+				setTimeout(() => {
+					const element = document.getElementById(`node-${nodeId}`);
+					if (element) {
+						element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						// Add a temporary highlight
+						element.classList.add('highlight-node');
+						setTimeout(() => element.classList.remove('highlight-node'), 2000);
+					}
+				}, 100);
 			}
 		}
 	}
