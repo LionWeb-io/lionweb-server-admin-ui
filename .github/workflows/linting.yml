@@ -10,10 +10,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 20
-      - name: Install
-        run: npm install
       - name: Setup
         run: npm run setup
+      - name: Install
+        run: npm install        
       - name: Check
         run: npm run check
       - name: Lint Check
