@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Partition } from '$lib/types';
 	import type { SerializationChunk } from '@lionweb/core';
 	import {
 		getPartitions,
@@ -9,26 +8,27 @@
 		loadPartition,
 		getRepositories
 	} from '$lib/services/repository';
-	import { currentSerializationFormatVersion } from '@lionweb/core';
 	import { page } from '$app/stores';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
-	// Define valid serialization format versions
-	const validVersions = ['2023.1', '2024.1'];
-	const DEFAULT_VERSION = '2024.1'; // Most recent version
+	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
 
-	type PartitionWithData = Partition & { isLoaded?: boolean; data?: SerializationChunk };
+	interface PartitionData {
+		id: string;
+		isLoaded?: boolean; 
+		data?: SerializationChunk;
+	}
 
 	let repositoryName = $page.url.searchParams.get('repository') || 'default';
-	let partitions: Array<PartitionWithData> = [];
+	let partitions: Array<PartitionData> = [];
 	let loading = false;
 	let error: string | null = null;
 	let dragActive = false;
 	let showDeleteConfirm = false;
-	let partitionToDelete: Partition | null = null;
+	let partitionToDelete: PartitionData | null = null;
 	let expandedNodes = new Set<string>();
-	let repositories: Array<{ name: string; lionweb_version: string; history: boolean }> = [];
+	let repositories: Array<RepositoryConfiguration> = [];
 
 	async function loadPartitions() {
 		if (!repositoryName) return;
@@ -38,9 +38,7 @@
 
 		try {
 			const response = await getPartitions(repositoryName);
-			console.log('Partition list response:', response);
 			partitions = response.partitions.map((p) => ({ ...p, isLoaded: false }));
-			console.log('Updated partitions array:', partitions);
 		} catch (e) {
 			error = `Failed to load partitions: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
@@ -55,7 +53,6 @@
 			error = null;
 
 			await createPartition(repositoryName, originalChunk);
-			console.log('Reloading partitions list...');
 			await loadPartitions();
 
 			// Show success message
@@ -132,13 +129,12 @@
 		}
 	}
 
-	async function handleLoadPartition(partition: Partition) {
+	async function handleLoadPartition(partition: PartitionData) {
 		try {
 			loading = true;
 			error = null;
 
 			const data = await loadPartition(repositoryName, partition.id);
-			console.log('Loaded partition data:', data);
 
 			// Update the partition with its data
 			partitions = partitions.map((p) =>
@@ -213,7 +209,7 @@
 		loadPartitions();
 	}
 
-	async function handleSavePartition(partition: PartitionWithData) {
+	async function handleSavePartition(partition: PartitionData) {
 		try {
 			// If partition is not loaded, load it first
 			if (!partition.isLoaded) {

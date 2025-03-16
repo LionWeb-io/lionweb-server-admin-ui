@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { SerializationChunk } from '@lionweb/core';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
@@ -29,46 +28,8 @@
 
 	async function handleFileLoad(file: File) {
 		try {
-			console.log('Loading file:', file.name);
 			const text = await file.text();
-			console.log('File content:', text.substring(0, 500) + '...'); // Log first 500 chars
 			chunk = JSON.parse(text) as SerializationChunk;
-			console.log('Parsed chunk:', {
-				version: chunk.serializationFormatVersion,
-				languages: chunk.languages.length,
-				nodes: chunk.nodes.length,
-				firstNode: chunk.nodes[0]
-					? {
-							id: chunk.nodes[0].id,
-							classifier: chunk.nodes[0].classifier,
-							properties: chunk.nodes[0].properties.length,
-							containments: chunk.nodes[0].containments.length,
-							references: chunk.nodes[0].references.length,
-							parent: chunk.nodes[0].parent
-						}
-					: null
-			});
-
-			// Log all nodes to understand the structure
-			console.log(
-				'All nodes:',
-				chunk.nodes.map((n) => ({
-					id: n.id,
-					parent: n.parent,
-					classifier: n.classifier,
-					properties: n.properties.length,
-					containments: n.containments.length,
-					references: n.references.length
-				}))
-			);
-
-			// Log root nodes
-			const rootNodes = chunk.nodes.filter((node) => !node.parent);
-			console.log(
-				'Root nodes:',
-				rootNodes.map((n) => n.id)
-			);
-
 			error = null;
 		} catch (e) {
 			console.error('Error loading file:', e);
@@ -87,20 +48,6 @@
 
 		await handleFileLoad(files[0]);
 	}
-
-	function toggleNode(nodeId: string) {
-		if (expandedNodes.has(nodeId)) {
-			expandedNodes.delete(nodeId);
-		} else {
-			expandedNodes.add(nodeId);
-		}
-		expandedNodes = expandedNodes; // Trigger reactivity
-	}
-
-	type NodeWithChildren = SerializationChunk['nodes'][0] & {
-		level: number;
-		children: NodeWithChildren[];
-	};
 
 	function handleNodeClick(event: CustomEvent<{ nodeId: string }>) {
 		const nodeId = event.detail.nodeId;
