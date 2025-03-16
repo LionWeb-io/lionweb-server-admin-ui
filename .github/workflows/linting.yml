@@ -13,7 +13,7 @@ jobs:
       - name: Setup
         run: npm run setup
       - name: Install
-        run: npm install        
+        run: npm install
       - name: Check
         run: npm run check
       - name: Lint Check
