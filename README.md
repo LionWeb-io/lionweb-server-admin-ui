@@ -12,6 +12,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - View and edit repository contents
 - Visualize the content of LionWeb files
 
+You can see this application in action:
+[![Video](https://img.youtube.com/vi/Yo1f4TUpH6U/0.jpg)](https://www.youtube.com/watch?v=Yo1f4TUpH6U)
+
 ## Run the application through docker
 
 This requires you to have Docker and Docker Compose installed.
