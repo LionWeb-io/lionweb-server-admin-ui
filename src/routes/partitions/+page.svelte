@@ -261,6 +261,20 @@
 		}
 	}
 
+	function handleExpandAll() {
+		if (!activePartition?.data) return;
+		// Add all node IDs to expandedNodes
+		activePartition.data.nodes.forEach(node => {
+			expandedNodes.add(node.id);
+		});
+		expandedNodes = expandedNodes; // Trigger reactivity
+	}
+
+	function handleCollapseAll() {
+		expandedNodes.clear();
+		expandedNodes = expandedNodes; // Trigger reactivity
+	}
+
 	onMount(async () => {
 		await loadRepositories();
 		await loadPartitions();
@@ -529,19 +543,43 @@
 							</h3>
 							<p class="mt-1 text-sm text-gray-500">{activePartition.id}</p>
 						</div>
-						<button
-							type="button"
-							class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-							on:click={() => {
-								showPartitionData = false;
-								activePartition = null;
-							}}
-						>
-							<span class="sr-only">Close</span>
-							<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-							</svg>
-						</button>
+						<div class="flex items-center gap-2">
+							<button
+								type="button"
+								class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+								on:click={handleExpandAll}
+								title="Expand All"
+							>
+								<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+								</svg>
+								Expand All
+							</button>
+							<button
+								type="button"
+								class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+								on:click={handleCollapseAll}
+								title="Collapse All"
+							>
+								<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+								</svg>
+								Collapse All
+							</button>
+							<button
+								type="button"
+								class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+								on:click={() => {
+									showPartitionData = false;
+									activePartition = null;
+								}}
+							>
+								<span class="sr-only">Close</span>
+								<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
 					</div>
 				</div>
 
