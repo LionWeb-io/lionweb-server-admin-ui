@@ -60,7 +60,7 @@
 	function renderPropertyValue(property: { value: any }): string {
 		if (property.value === null) return 'null';
 		if (typeof property.value === 'object') return JSON.stringify(property.value);
-		return String(property.value);
+		return String(property.value).replace(/\n/g, '↵\n');
 	}
 
 	function getNodeColor(id: string): string {
@@ -130,10 +130,10 @@
 					{:else}
 						<span class="w-4"></span>
 					{/if}
-					<div class="flex-grow rounded border p-2" style="background-color: white">
+					<div class="flex-grow rounded border p-2 max-w-2xl" style="background-color: white">
 						<div class="node-header">
-							<p class="font-medium">{node.id || 'Unknown'}</p>
-							<div class="classifier">
+							<p class="font-medium break-all min-w-0">{node.id || 'Unknown'}</p>
+							<div class="classifier flex-shrink-0">
 								<MetaPointerUI
 									language={node.classifier?.language}
 									key={node.classifier?.key}
@@ -144,62 +144,63 @@
 
 						{#if node.properties?.length || node.references?.length}
 							<hr class="my-2 border-t border-gray-200" />
-						{/if}
-
-						{#if node.properties?.length}
-							<div class="mt-2">
-								<div class="properties-container">
-									{#each node.properties as property}
-										<div class="property-row">
-											<MetaPointerUI
-												language={property.property.language}
-												key={property.property.key}
-												version={property.property.version}
-											/>
-											<span class="property-equals">=</span>
-											<span
-												class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
-											>
-												{renderPropertyValue({ value: getPropertyValue(property) })}
-											</span>
-										</div>
-									{/each}
-								</div>
-							</div>
-						{/if}
-						{#if node.references.length > 0}
-							<div class="mt-2">
-								<div class="properties-container">
-									{#each node.references as reference: SerializedReference}
-										{#if getReferenceValues(reference).length > 0}
-											<div class="property-row">
-												<MetaPointerUI
-													language={reference.reference.language}
-													key={reference.reference.key}
-													version={reference.reference.version}
-												/>
-												<span class="reference-arrow">→</span>
-												<div class="reference-targets">
-													{#each getReferenceValues(reference) as target}
-														<span class="reference-target">
-															{#if target.resolveInfo}
-																<span>{target.resolveInfo}</span>
-															{/if}
-															{#if target.reference}
-																<span
-																	class="reference-link"
-																	on:click={() => handleNodeClick(target.reference)}
-																>
-																	({target.reference})
-																</span>
-															{/if}
-														</span>
-													{/each}
+							<div class="overflow-x-auto max-h-96">
+								{#if node.properties?.length}
+									<div class="mt-2">
+										<div class="properties-container">
+											{#each node.properties as property}
+												<div class="property-row">
+													<MetaPointerUI
+														language={property.property.language}
+														key={property.property.key}
+														version={property.property.version}
+													/>
+													<span class="property-equals">=</span>
+													<span
+														class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
+													>
+														{renderPropertyValue({ value: getPropertyValue(property) })}
+													</span>
 												</div>
-											</div>
-										{/if}
-									{/each}
-								</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
+								{#if node.references.length > 0}
+									<div class="mt-2">
+										<div class="properties-container">
+											{#each node.references as reference: SerializedReference}
+												{#if getReferenceValues(reference).length > 0}
+													<div class="property-row">
+														<MetaPointerUI
+															language={reference.reference.language}
+															key={reference.reference.key}
+															version={reference.reference.version}
+														/>
+														<span class="reference-arrow">→</span>
+														<div class="reference-targets">
+															{#each getReferenceValues(reference) as target}
+																<span class="reference-target">
+																	{#if target.resolveInfo}
+																		<span>{target.resolveInfo}</span>
+																	{/if}
+																	{#if target.reference}
+																		<span
+																			class="reference-link"
+																			on:click={() => handleNodeClick(target.reference)}
+																		>
+																			({target.reference})
+																		</span>
+																	{/if}
+																</span>
+															{/each}
+														</div>
+													</div>
+												{/if}
+											{/each}
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
@@ -232,6 +233,8 @@
 	}
 	.property-value {
 		width: fit-content;
+		white-space: pre-wrap;
+		font-family: monospace;
 	}
 	.reference-arrow {
 		width: 30px;

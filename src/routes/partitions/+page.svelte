@@ -29,6 +29,8 @@
 	let dragActive = false;
 	let showDeleteConfirm = false;
 	let partitionToDelete: PartitionData | null = null;
+	let showPartitionData = false;
+	let activePartition: PartitionData | null = null;
 	let expandedNodes = new Set<string>();
 	let repositories: Array<RepositoryConfiguration> = [];
 
@@ -153,6 +155,10 @@
 			partitions = partitions.map((p) =>
 				p.id === partition.id ? { ...p, isLoaded: true, data } : p
 			);
+			
+			// Show the partition data modal
+			activePartition = partitions.find(p => p.id === partition.id) || null;
+			showPartitionData = true;
 		} catch (e) {
 			error = `Failed to load partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
@@ -378,29 +384,32 @@
 					<p class="text-gray-500">No partitions found in repository "{repositoryName}"</p>
 				</div>
 			{:else}
-				<div class="space-y-4">
-					{#each partitions as partition}
-						<div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{#each partitions.sort((a, b) => a.id.localeCompare(b.id)) as partition}
+						<div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200">
 							<div class="px-6 py-4">
-								<div class="flex items-start justify-between">
-									<div class="flex items-center gap-3">
-										<!-- Status dot -->
-										<div class="flex-shrink-0">
-											{#if partition.isLoaded}
-												<div class="h-3 w-3 rounded-full bg-green-500"></div>
-											{:else}
-												<div class="h-3 w-3 rounded-full bg-gray-300"></div>
-											{/if}
-										</div>
-										<!-- Partition info -->
-										<div>
-											{#if partition.name}
-												<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
-											{/if}
-											<p class="text-xs text-gray-500 uppercase tracking-wide">{partition.id}</p>
+								<div class="flex flex-col">
+									<div class="flex items-center justify-between mb-4">
+										<div class="flex items-center gap-3">
+											<!-- Status dot -->
+											<div class="flex-shrink-0">
+												{#if partition.isLoaded}
+													<div class="h-3 w-3 rounded-full bg-green-500"></div>
+												{:else}
+													<div class="h-3 w-3 rounded-full bg-gray-300"></div>
+												{/if}
+											</div>
+											<!-- Partition info -->
+											<div class="min-w-0">
+												{#if partition.name}
+													<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
+												{/if}
+												<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
+											</div>
 										</div>
 									</div>
-									<div class="flex items-center gap-2">
+
+									<div class="flex justify-end gap-2 border-t pt-4">
 										<!-- Load/Refresh button -->
 										<button
 											on:click={() => handleLoadPartition(partition)}
@@ -481,36 +490,15 @@
 											</svg>
 										</button>
 									</div>
-								</div>
 
-								<!-- Partition data -->
-								{#if partition.isLoaded && partition.data}
-									<div class="mt-4 border-t pt-4">
-										<div class="space-y-4">
-											<!-- Languages -->
-											{#if partition.data.languages.length > 0}
-												<div>
-													<h4 class="mb-2 text-sm font-medium text-gray-700">Languages</h4>
-													<div class="flex flex-wrap gap-2">
-														{#each partition.data.languages as language}
-															<LanguageUI language={language.key} version={language.version} />
-														{/each}
-													</div>
-												</div>
-											{/if}
-
-											<!-- Nodes -->
-											<div>
-												<h4 class="mb-2 text-sm font-medium text-gray-700">Nodes</h4>
-												<NodeTree
-													chunk={partition.data}
-													bind:expandedNodes
-													on:nodeClick={handleNodeClick}
-												/>
-											</div>
+									<!-- Remove the partition data section from the card -->
+									{#if partition.isLoaded && partition.data}
+										<div class="mt-2 text-sm text-gray-500">
+											{partition.data.languages.length} language{partition.data.languages.length !== 1 ? 's' : ''}, 
+											{partition.data.nodes.length} node{partition.data.nodes.length !== 1 ? 's' : ''}
 										</div>
-									</div>
-								{/if}
+									{/if}
+								</div>
 							</div>
 						</div>
 					{/each}
@@ -519,6 +507,76 @@
 		</div>
 	</div>
 </div>
+
+<!-- Partition Data Modal -->
+{#if showPartitionData && activePartition?.isLoaded && activePartition?.data}
+	<div
+		class="fixed inset-0 z-10 overflow-y-auto"
+		aria-labelledby="modal-title"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div class="flex min-h-screen items-center justify-center p-2">
+			<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+			<div class="relative w-full max-w-[90%] transform overflow-hidden rounded-lg bg-white shadow-xl transition-all">
+				<!-- Header -->
+				<div class="border-b border-gray-200 px-6 py-4">
+					<div class="flex items-center justify-between">
+						<div>
+							<h3 class="text-lg font-medium text-gray-900">
+								{activePartition.name || 'Partition Details'}
+							</h3>
+							<p class="mt-1 text-sm text-gray-500">{activePartition.id}</p>
+						</div>
+						<button
+							type="button"
+							class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+							on:click={() => {
+								showPartitionData = false;
+								activePartition = null;
+							}}
+						>
+							<span class="sr-only">Close</span>
+							<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+
+				<!-- Content -->
+				<div class="px-6 py-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+					<div class="space-y-6">
+						<!-- Languages -->
+						{#if activePartition.data.languages.length > 0}
+							<div>
+								<h4 class="text-sm font-medium text-gray-700 mb-2">Languages</h4>
+								<div class="flex flex-wrap gap-2">
+									{#each activePartition.data.languages as language}
+										<LanguageUI language={language.key} version={language.version} />
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						<!-- Nodes -->
+						<div>
+							<h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
+							<div class="bg-gray-50 rounded-lg p-4">
+								<NodeTree
+									chunk={activePartition.data}
+									bind:expandedNodes
+									on:nodeClick={handleNodeClick}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm}
