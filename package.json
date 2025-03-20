@@ -38,7 +38,9 @@
 	},
 	"dependencies": {
 		"@lionweb/core": "^0.6.12",
-		"@lionweb/repository-client": "file:/Users/ftomassetti/repos/lionweb-repository/packages/client",
-		"@lionweb/repository-shared": "file:/Users/ftomassetti/repos/lionweb-repository/packages/shared"
+		"@lionweb/repository-client": "file:scripts/repo-clone/packages/client/lionweb-repository-client-0.3.0.tgz",
+		"@lionweb/repository-shared": "file:scripts/repo-clone/packages/shared/lionweb-repository-shared-0.3.0.tgz",
+		"@types/jszip": "^3.4.0",
+		"jszip": "^3.10.1"
 	}
 }

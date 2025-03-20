@@ -7,6 +7,7 @@ import type {
 } from '@lionweb/repository-shared';
 import { RepositoryClient } from '@lionweb/repository-client';
 import type { LionWebJsonChunk } from '@lionweb/repository-client';
+import type { LionWebJsonNode } from '@lionweb/validation';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
 const CLIENT_ID = 'lionWebRepoAdminUI';
@@ -58,39 +59,14 @@ export async function deleteRepository(repositoryName: string): Promise<void> {
 	}
 }
 
-export async function getPartitions(repositoryName: string): Promise<PartitionListResponse> {
-	try {
-		const params = new URLSearchParams({
-			clientId: CLIENT_ID,
-			repository: repositoryName
-		});
-
-		const response = await fetch(`${API_BASE_URL}/bulk/listPartitions?${params.toString()}`, {
-			method: 'POST',
-			headers: {
-				Accept: 'application/json'
-			}
-		});
-		const data = await handleResponse(response);
-
-		// Extract partition IDs from the nested structure
-		const partitionIds = data?.chunk?.nodes?.map((node: { id: string }) => node.id) || [];
-
-		// Convert the response to our expected format
-		const partitions = partitionIds.map((id: string) => ({
-			id,
-			name: id // Using ID as name since we don't have the actual name
-		}));
-
-		return {
-			partitions,
-			total: partitionIds.length
-		};
-	} catch (e) {
-		console.error('Error fetching partitions:', e);
-		throw new Error(
-			`Failed to fetch partitions: ${e instanceof Error ? e.message : 'Unknown error'}`
-		);
+export async function listPartitionsIDs(repositoryName: string): Promise<string[]> {
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const response = await client.bulk.listPartitions()
+	if (response.body.success) {
+		return response.body.chunk.nodes.map(node => node.id);
+	} else {
+		console.error('Error listPartitions:', response.body.messages);
+		throw new Error(`Failed to listPartitions: ${response.body.messages}`);
 	}
 }
 
@@ -183,4 +159,91 @@ export async function loadPartition(
 	console.log('Load partition response:', response.body);
 
 	return response.body.chunk;
+}
+
+export async function downloadRepositoryAsZip(repositoryName: string, 
+	progressCallback: (current: number, total: number) => void): Promise<Blob> {
+
+	// Get list of all partitions
+	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
+	const totalPartitions = existingPartitionsIDs.length;
+	
+	// Create a new JSZip instance
+	const JSZip = (await import('jszip')).default;
+	const zip = new JSZip();
+
+	// Download each partition
+	for (let i = 0; i < totalPartitions; i++) {
+		const existingPartitionID = existingPartitionsIDs[i];
+		progressCallback(i, totalPartitions);
+		
+		// Load the partition data
+		const partitionData = await loadPartition(repositoryName, existingPartitionID);
+		
+		// Add it to the zip file
+		zip.file(`${existingPartitionID}.json`, JSON.stringify(partitionData, null, 2));
+	}
+	
+	// Final progress update
+	progressCallback(totalPartitions, totalPartitions);
+	
+	// Generate the zip file
+	return await zip.generateAsync({ type: "blob" });
+}
+
+export async function uploadRepositoryFromZip(
+	file: File, 
+	repositoryName: string,
+	progressCallback: (current: number, total: number) => void,
+	handleExistingPartition: (partitionId: string) => Promise<'skip' | 'replace'>
+): Promise<void> {
+	const JSZip = (await import('jszip')).default;
+	const zip = await JSZip.loadAsync(file);
+	
+	// Process each file in the zip
+	const files = Object.values(zip.files).filter((zipFile): zipFile is import('jszip').JSZipObject => !zipFile.dir);
+	const total = files.length;
+
+	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
+	console.log("Existing partitions", existingPartitionsIDs.toSorted())
+	console.log("Regarding partitiong", "codebase_file_org_i_nterprise_ui_services_php_easycom_scripts_functions_php", "is existing? ",
+		existingPartitionsIDs.includes("codebase_file_org_i_nterprise_ui_services_php_easycom_scripts_functions_php"));
+	
+	for (let i = 0; i < files.length; i++) {
+		const zipFile = files[i];
+		progressCallback(i, total);
+		
+		const content = await zipFile.async('string');
+		const partitionData: LionWebJsonChunk = JSON.parse(content);
+
+		const rootsInPartitionData = partitionData.nodes.filter((node: LionWebJsonNode) => node.parent == null);
+		if (rootsInPartitionData.length != 1) {
+			throw new Error("Not a valid partition. Roots found: " + rootsInPartitionData.length);
+		}
+		
+		const partitionID = rootsInPartitionData[0].id;
+		const partitionExists = existingPartitionsIDs.includes(partitionID)
+		let skip = false;
+		console.log(`Partition ID: ${partitionID}`);
+		console.log(`Partition exists?: ${partitionExists}`);
+		if (partitionExists) {
+			const action = await handleExistingPartition(partitionID);
+			console.log("ACTION SELECTED", action);
+			if (action === 'skip') {
+				console.log(`Skipping ${partitionID}`);
+				skip = true;
+			} else if (action === 'replace') {
+				await deletePartition(repositoryName, partitionData.nodes[0].id);
+			} else {
+				throw new Error("Unexpected situation")
+			}
+		}
+		if (!skip) {
+			console.log("GOING FOR CREATION", partitionID);
+			await createPartition(repositoryName, partitionData);
+		}
+	}
+	
+	// Final progress update
+	progressCallback(total, total);
 }

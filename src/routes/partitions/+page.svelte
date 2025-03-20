@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { SerializationChunk } from '@lionweb/core';
 	import {
-		getPartitions,
+		listPartitionsIDs,
 		createPartition,
 		deletePartition,
 		loadPartition,
@@ -37,8 +37,8 @@
 		error = null;
 
 		try {
-			const response = await getPartitions(repositoryName);
-			partitions = response.partitions.map((p) => ({ ...p, isLoaded: false }));
+			const partitionsIDs = await listPartitionsIDs(repositoryName);
+			partitions = partitionsIDs.map((id) => ({ id:id, isLoaded: false }));
 		} catch (e) {
 			error = `Failed to load partitions: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
