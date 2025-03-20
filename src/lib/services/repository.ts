@@ -1,4 +1,4 @@
-import type { Partition, PartitionListResponse } from '$lib/types';
+import type { Partition } from '$lib/types';
 import type {
 	LionwebResponse,
 	RepositoryConfiguration,
@@ -9,16 +9,7 @@ import { RepositoryClient } from '@lionweb/repository-client';
 import type { LionWebJsonChunk } from '@lionweb/repository-client';
 import type { LionWebJsonNode } from '@lionweb/validation';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005';
 const CLIENT_ID = 'lionWebRepoAdminUI';
-
-async function handleResponse(response: Response) {
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`API Error (${response.status}): ${errorText}`);
-	}
-	return response.json();
-}
 
 export async function getRepositories(): Promise<ListRepositoriesResponse> {
 	const client = new RepositoryClient(CLIENT_ID, null);
@@ -205,9 +196,6 @@ export async function uploadRepositoryFromZip(
 	const total = files.length;
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
-	console.log("Existing partitions", existingPartitionsIDs.toSorted())
-	console.log("Regarding partitiong", "codebase_file_org_i_nterprise_ui_services_php_easycom_scripts_functions_php", "is existing? ",
-		existingPartitionsIDs.includes("codebase_file_org_i_nterprise_ui_services_php_easycom_scripts_functions_php"));
 	
 	for (let i = 0; i < files.length; i++) {
 		const zipFile = files[i];
@@ -224,13 +212,9 @@ export async function uploadRepositoryFromZip(
 		const partitionID = rootsInPartitionData[0].id;
 		const partitionExists = existingPartitionsIDs.includes(partitionID)
 		let skip = false;
-		console.log(`Partition ID: ${partitionID}`);
-		console.log(`Partition exists?: ${partitionExists}`);
 		if (partitionExists) {
 			const action = await handleExistingPartition(partitionID);
-			console.log("ACTION SELECTED", action);
 			if (action === 'skip') {
-				console.log(`Skipping ${partitionID}`);
 				skip = true;
 			} else if (action === 'replace') {
 				await deletePartition(repositoryName, partitionData.nodes[0].id);
@@ -239,7 +223,6 @@ export async function uploadRepositoryFromZip(
 			}
 		}
 		if (!skip) {
-			console.log("GOING FOR CREATION", partitionID);
 			await createPartition(repositoryName, partitionData);
 		}
 	}
