@@ -346,7 +346,7 @@
 								</div>
 								<p class="text-sm text-gray-600 italic">
 									{#if loadingPartitionCounts[repository.name]}
-										Calculating partitions...
+										Calculating number of partitions...
 									{:else if partitionCounts[repository.name] !== null}
 										{partitionCounts[repository.name]} partition{partitionCounts[repository.name] === 1 ? '' : 's'}
 									{:else}
