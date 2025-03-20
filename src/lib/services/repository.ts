@@ -152,6 +152,25 @@ export async function loadPartition(
 	return response.body.chunk;
 }
 
+export async function loadPartitionNames(
+	repositoryName: string,
+	partitionIds: string[]
+): Promise<Map<string, string | undefined>> {
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const response = await client.bulk.retrieve(partitionIds, 0);
+
+	if (!response.body.success) {
+		throw new Error(JSON.stringify(response.body.messages || 'Failed to load partition shallow data'));
+	}
+
+	const partitionNames = new Map<string, string | undefined>();
+	response.body.chunk.nodes.forEach((node) => {
+		const name = node.properties.find((property) => property.property.key === 'LionCore-builtins-INamed-name')?.value;
+		partitionNames.set(node.id, name);
+	});
+	return partitionNames;
+}
+
 export async function downloadRepositoryAsZip(repositoryName: string, 
 	progressCallback: (current: number, total: number) => void): Promise<Blob> {
 

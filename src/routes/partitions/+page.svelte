@@ -6,6 +6,7 @@
 		createPartition,
 		deletePartition,
 		loadPartition,
+		loadPartitionNames,
 		getRepositories
 	} from '$lib/services/repository';
 	import { page } from '$app/stores';
@@ -16,6 +17,7 @@
 
 	interface PartitionData {
 		id: string;
+		name?: string;
 		isLoaded?: boolean; 
 		data?: SerializationChunk;
 	}
@@ -39,6 +41,17 @@
 		try {
 			const partitionsIDs = await listPartitionsIDs(repositoryName);
 			partitions = partitionsIDs.map((id) => ({ id:id, isLoaded: false }));
+			
+			// Load shallow data for all partitions in a single request
+			try {
+				const partitionNames = await loadPartitionNames(repositoryName, partitionsIDs);
+				// Process each root node to extract names
+				for (const partition of partitions) {
+					partition.name = partitionNames.get(partition.id);
+				}
+			} catch (e) {
+				console.error('Error loading partition names:', e);
+			}
 		} catch (e) {
 			error = `Failed to load partitions: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
@@ -344,7 +357,10 @@
 										</div>
 										<!-- Partition info -->
 										<div>
-											<h3 class="text-lg font-semibold text-gray-900">{partition.id}</h3>
+											{#if partition.name}
+												<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
+											{/if}
+											<p class="text-xs text-gray-500 uppercase tracking-wide">{partition.id}</p>
 										</div>
 									</div>
 									<div class="flex items-center gap-2">
