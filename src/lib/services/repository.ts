@@ -230,3 +230,13 @@ export async function uploadRepositoryFromZip(
 	// Final progress update
 	progressCallback(total, total);
 }
+
+export async function getPartitionsCount(repositoryName: string): Promise<number> {
+	try {
+		const partitionsIDs = await listPartitionsIDs(repositoryName);
+		return partitionsIDs.length;
+	} catch (e) {
+		console.error('Error getting partitions count:', e);
+		throw new Error(`Failed to get partitions count: ${e instanceof Error ? e.message : 'Unknown error'}`);
+	}
+}

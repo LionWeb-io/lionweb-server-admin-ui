@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getRepositories, createRepository, deleteRepository, downloadRepositoryAsZip, uploadRepositoryFromZip } from '$lib/services/repository';
+	import { getRepositories, createRepository, deleteRepository, downloadRepositoryAsZip, uploadRepositoryFromZip, getPartitionsCount } from '$lib/services/repository';
 	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
 	import CreateRepositoryModal from '$lib/components/modals/CreateRepositoryModal.svelte';
 	import DeleteConfirmationModal from '$lib/components/modals/DeleteConfirmationModal.svelte';
@@ -25,6 +25,8 @@
 	let existingPartitionResolver: ((value: 'skip' | 'replace') => void) | null = null;
 	let uploadAction: 'skip' | 'replace' | null = null;
 	let applyToAll = false;
+	let partitionCounts: { [key: string]: number | null } = {};
+	let loadingPartitionCounts: { [key: string]: boolean } = {};
 
 	// Form data for new repository
 	let newRepository: RepositoryConfiguration = {
@@ -47,6 +49,13 @@
 			const response = await getRepositories();
 			if (response.success) {
 				repositories = response.repositories;
+				// Initialize partition counts
+				repositories.forEach(repo => {
+					partitionCounts[repo.name] = null;
+					loadingPartitionCounts[repo.name] = false;
+				});
+				// Start loading partition counts
+				repositories.forEach(repo => loadPartitionCount(repo.name));
 			} else {
 				error = response.messages[0]?.message || 'Failed to load repositories';
 			}
@@ -55,6 +64,21 @@
 			console.error('Error details:', e);
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function loadPartitionCount(repositoryName: string) {
+		if (loadingPartitionCounts[repositoryName]) return;
+		
+		try {
+			loadingPartitionCounts[repositoryName] = true;
+			const count = await getPartitionsCount(repositoryName);
+			partitionCounts = { ...partitionCounts, [repositoryName]: count };
+		} catch (e) {
+			console.error(`Error loading partition count for ${repositoryName}:`, e);
+			partitionCounts = { ...partitionCounts, [repositoryName]: null };
+		} finally {
+			loadingPartitionCounts = { ...loadingPartitionCounts, [repositoryName]: false };
 		}
 	}
 
@@ -320,6 +344,15 @@
 										</span>
 									{/if}
 								</div>
+								<p class="text-sm text-gray-600 italic">
+									{#if loadingPartitionCounts[repository.name]}
+										Calculating partitions...
+									{:else if partitionCounts[repository.name] !== null}
+										{partitionCounts[repository.name]} partition{partitionCounts[repository.name] === 1 ? '' : 's'}
+									{:else}
+										Error loading partitions
+									{/if}
+								</p>
 
 								<div class="flex justify-end space-x-2">
 									<button
