@@ -231,6 +231,7 @@ export async function uploadRepositoryFromZip(
 	progressCallback(total, total);
 }
 
+// TODO remove this trivial function
 export async function getPartitionsCount(repositoryName: string): Promise<number> {
 	try {
 		const partitionsIDs = await listPartitionsIDs(repositoryName);
