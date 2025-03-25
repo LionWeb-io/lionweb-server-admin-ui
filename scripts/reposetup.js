@@ -38,10 +38,18 @@ try {
 		if (fs.existsSync(modulePath)) {
 			console.log(`Building module: ${module}`);
 			execSync('npm run build', { cwd: modulePath, stdio: 'inherit' });
-
-			console.log(`Linking module locally: ${module}`);
-			execSync(`npm pack`, { cwd: modulePath, stdio: 'inherit' }); // Create a tarball
-			execSync(`npm install ${modulePath}/*.tgz`, { cwd: __dirname, stdio: 'inherit' }); // Install from local package
+	
+			console.log(`Packing module: ${module}`);
+			const tarballName = execSync('npm pack', { cwd: modulePath }).toString().trim();
+			const tarballPath = path.join(modulePath, tarballName);
+	
+			if (fs.existsSync(tarballPath)) {
+				console.log(`Installing module from: ${tarballPath}`);
+				execSync(`npm install ${tarballPath}`, { cwd: __dirname, stdio: 'inherit' });
+			} else {
+				console.error(`Tarball ${tarballPath} was not created`);
+				process.exit(1);
+			}
 		} else {
 			console.error(`Module ${module} not found in ${CLONE_DIR}`);
 		}
