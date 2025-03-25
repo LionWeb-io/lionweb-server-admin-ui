@@ -13,7 +13,55 @@ const COMMIT_HASH = '6fec1602c00cdd8bdfaf710f746e3f918c9a0b8d';
 const CLONE_DIR = path.resolve(__dirname, 'repo-clone');
 const MODULES = ['shared', 'client'];
 
+/**
+ * We may want to remove entries from package-lock as the version we are using could be slightly changed.
+ */
+function cleanUpRepoEntriesFromPackageLock() {
+	const lockFilePath = path.resolve(__dirname, '..', 'package-lock.json');
+
+	if (!fs.existsSync(lockFilePath)) {
+		const lockFilePath = path.resolve(__dirname, '..', 'package-lock.json');
+		console.log('Lock file path:', lockFilePath);
+		console.warn('package-lock.json not found');
+	}
+
+	const raw = fs.readFileSync(lockFilePath, 'utf-8');
+	const lock = JSON.parse(raw);
+
+	// npm 7+ uses "packages", npm 6 and below uses "dependencies"
+	const packagesToRemove = [
+		'node_modules/@lionweb/repository-client',
+		'node_modules/@lionweb/repository-shared'
+	];
+
+	if (lock.packages) {
+		for (const pkg of packagesToRemove) {
+			if (lock.packages[pkg]) {
+				console.log(`Removing package entry: ${pkg}`);
+				delete lock.packages[pkg];
+			}
+		}
+	}
+
+	// Also check top-level dependencies just in case
+	if (lock.dependencies) {
+		for (const pkg of packagesToRemove) {
+			const depName = pkg.split('/').slice(-1)[0];
+			if (lock.dependencies[depName]) {
+				console.log(`Removing dependency entry: ${depName}`);
+				delete lock.dependencies[depName];
+			}
+		}
+	}
+
+	// Write back to package-lock.json
+	fs.writeFileSync(lockFilePath, JSON.stringify(lock, null, 2), 'utf-8');
+	console.log('package-lock.json updated.');
+}
+
 try {
+	cleanUpRepoEntriesFromPackageLock();
+
 	if (!fs.existsSync(CLONE_DIR)) {
 		console.log('Initializing repository...');
 		execSync(`git init ${CLONE_DIR}`, { stdio: 'inherit' });
@@ -38,18 +86,18 @@ try {
 		if (fs.existsSync(modulePath)) {
 			console.log(`Building module: ${module}`);
 			execSync('npm run build', { cwd: modulePath, stdio: 'inherit' });
-	
-			console.log(`Packing module: ${module}`);
-			const tarballName = execSync('npm pack', { cwd: modulePath }).toString().trim();
-			const tarballPath = path.join(modulePath, tarballName);
-	
-			if (fs.existsSync(tarballPath)) {
-				console.log(`Installing module from: ${tarballPath}`);
-				execSync(`npm install ${tarballPath}`, { cwd: __dirname, stdio: 'inherit' });
-			} else {
-				console.error(`Tarball ${tarballPath} was not created`);
-				process.exit(1);
-			}
+			execSync(`npm pack`, { cwd: modulePath, stdio: 'inherit' }); // Create a tarball
+		} else {
+			console.error(`Module ${module} not found in ${CLONE_DIR}`);
+		}
+	});
+
+	// Link each module
+	MODULES.forEach((module) => {
+		const modulePath = path.join(CLONE_DIR, 'packages', module);
+		if (fs.existsSync(modulePath)) {
+			console.log(`Linking module locally: ${module}`);
+			execSync(`npm install ${modulePath}/*.tgz`, { cwd: __dirname, stdio: 'inherit' }); // Install from local package
 		} else {
 			console.error(`Module ${module} not found in ${CLONE_DIR}`);
 		}
