@@ -4,17 +4,20 @@ FROM node:20 AS builder
 # Set working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker caching
-COPY package*.json ./
+# Copy package.json first to leverage Docker caching
+# DO NOT COPY package-lock.json
+COPY package.json ./
 
 # Install dependencies
-RUN npm install
+# RUN npm install
 
 # Copy the entire project source
 COPY . .
 
 # Build the Svelte app
 RUN npm run setup
+RUN rm package-lock.json
+RUN npm cache clean --force
 RUN npm install
 RUN npm run build
 
@@ -25,7 +28,7 @@ FROM node:20 AS runner
 WORKDIR /app
 
 # Copy only necessary files from the builder stage
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 COPY --from=builder /app/static ./static
