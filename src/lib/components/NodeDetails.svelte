@@ -1,0 +1,71 @@
+<script lang="ts">
+	import type { SerializedNode } from '@lionweb/core';
+
+	export let node: SerializedNode;
+	export let handleNodeClick: (id: string) => void;
+
+	import MetaPointerUI from './MetaPointerUI.svelte';
+	import { getPropertyValue, getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering';
+</script>
+
+{#if node.properties?.length || node.references?.length}
+	<hr class="my-2 border-t border-gray-200" />
+	<div class="overflow-x-auto max-h-96">
+		{#if node.properties?.length}
+			<div class="mt-2">
+				<div class="properties-container">
+					{#each node.properties as property}
+						<div class="property-row">
+							<MetaPointerUI
+								language={property.property.language}
+								key={property.property.key}
+								version={property.property.version}
+							/>
+							<span class="property-equals">=</span>
+							<span
+								class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
+							>
+                {renderPropertyValue({ value: getPropertyValue(property) })}
+              </span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+		{#if node.references?.length}
+			<div class="mt-2">
+				<div class="properties-container">
+					{#each node.references as reference}
+						{#if getReferenceValues(reference).length > 0}
+							<div class="property-row">
+								<MetaPointerUI
+									language={reference.reference.language}
+									key={reference.reference.key}
+									version={reference.reference.version}
+								/>
+								<span class="reference-arrow">→</span>
+								<div class="reference-targets">
+									{#each getReferenceValues(reference) as target}
+                    <span class="reference-target">
+                      {#if target.resolveInfo}
+                        <span>{target.resolveInfo}</span>
+                      {/if}
+											{#if target.reference}
+                        <span
+													class="reference-link"
+													on:click={() => handleNodeClick(target.reference)}
+												>
+                          ({target.reference})
+                        </span>
+                      {/if}
+                    </span>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{/each}
+				</div>
+			</div>
+		{/if}
+	</div>
+{/if}
