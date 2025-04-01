@@ -25,7 +25,7 @@
 							<span
 								class="property-value rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-gray-700 shadow-sm"
 							>
-                {renderPropertyValue({ value: getPropertyValue(property) })}
+                {renderPropertyValue(property)}
               </span>
 						</div>
 					{/each}
