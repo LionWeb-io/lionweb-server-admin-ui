@@ -71,6 +71,10 @@ npm run preview
 - `/src/app.d.ts` - TypeScript declarations
 - `/static` - Static assets
 
+## Do a release
+
+Run `npm run release`
+
 ## What's next?
 
 Feel free to contribute! If you find any issues or have feature requests, 
