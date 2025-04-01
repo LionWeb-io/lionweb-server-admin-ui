@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { SerializedNode } from '@lionweb/core';
+	import type { LionWebJsonNode } from '@lionweb/validation';
 
-	export let node: SerializedNode;
+	export let node: LionWebJsonNode;
 	export let handleNodeClick: (id: string) => void;
 
 	import MetaPointerUI from './MetaPointerUI.svelte';

@@ -9,16 +9,18 @@
 	import { createEventDispatcher } from 'svelte';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
 	import NodeDetails from '$lib/components/NodeDetails.svelte';
+	import type { LionWebJsonNode } from '@lionweb/validation/src/json/LionWebJson';
+	import type { LionWebJsonChunk } from '@lionweb/validation';
 	
-	export let chunk: SerializationChunk;
+	export let chunk: LionWebJsonChunk;
 	export let expandedNodes: Set<string> = new Set();
 	export let level: number = 0;
 	export let nodeId: string | null = null;
 	let allContainments = chunk.nodes
-		.map((container: SerializedNode) => container.containments)
+		.map((container: LionWebJsonNode) => container.containments)
 		.flat();
 	let allAnnotationIds = new Set(chunk.nodes
-		.map((container: SerializedNode) => container.annotations)
+		.map((container: LionWebJsonNode) => container.annotations)
 		.flat());
 
 	const dispatch = createEventDispatcher();
@@ -30,7 +32,7 @@
 	}
 
 	let allRoles = new Map<string, MetaPointer | undefined>();
-	chunk.nodes.forEach((node: SerializedNode) => {
+	chunk.nodes.forEach((node: LionWebJsonNode) => {
 		allRoles.set(node.id, getRole(node.id));
 	});
 
@@ -43,7 +45,7 @@
 		expandedNodes = expandedNodes; // Trigger reactivity
 	}
 
-	function getChildNodes(id: string): SerializedNode[] {
+	function getChildNodes(id: string): LionWebJsonNode[] {
 		if (!chunk?.nodes) return [];
 		const children = chunk.nodes.filter((node) => node.parent === id);
 		return children;
@@ -55,11 +57,11 @@
 		return thisNode.annotations;
 	}
 
-	function hasChildren(node: SerializedNode): boolean {
+	function hasChildren(node: LionWebJsonNode): boolean {
 		return getChildNodes(node.id).length > 0;
 	}
 
-	function hasAnnotations(node: SerializedNode): boolean {
+	function hasAnnotations(node: LionWebJsonNode): boolean {
 		return getAnnotationsOn(node.id).length > 0;
 	}
 
@@ -79,7 +81,7 @@
 		dispatch('nodeClick', { nodeId: id });
 	}
 
-	function isFirstNodeInContainment(node: SerializedNode): boolean {
+	function isFirstNodeInContainment(node: LionWebJsonNode): boolean {
 		const role = allRoles.get(node.id);
 		if (!role) return false;
 
@@ -96,11 +98,11 @@
 		return nodesInSameContainment[0]?.id === node.id;
 	}
 
-	function isAnnotation(node: SerializedNode): boolean {
+	function isAnnotation(node: LionWebJsonNode): boolean {
 		return allAnnotationIds.has(node.id);
 	}
 
-	function isFirstAnnotation(node: SerializedNode): boolean {
+	function isFirstAnnotation(node: LionWebJsonNode): boolean {
 		if (!allAnnotationIds.has(node.id)) {
 			return false;
 		}
@@ -121,7 +123,7 @@
 </script>
 
 <div class="space-y-2">
-	{#each nodes as node: SerializedNode}
+	{#each nodes as node:LionWebJsonNode}
 		<div
 			class="rounded p-2"
 			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"

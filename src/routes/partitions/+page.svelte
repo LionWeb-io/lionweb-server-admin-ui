@@ -19,7 +19,7 @@
 		id: string;
 		name?: string;
 		isLoaded?: boolean; 
-		data?: SerializationChunk;
+		data?: LionWebJsonChunk;
 	}
 
 	let repositoryName = $page.url.searchParams.get('repository') || 'default';

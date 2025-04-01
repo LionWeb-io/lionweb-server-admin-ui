@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { SerializationChunk } from '@lionweb/core';
+	import type { LionWebJsonChunk } from '@lionweb/validation';
+
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
 
 	let dropZone: HTMLElement;
 	let isDragging = false;
-	let chunk: SerializationChunk | null = null;
+	let chunk: LionWebJsonChunk | null = null;
 	let error: string | null = null;
 	let expandedNodes = new Set<string>();
 
@@ -29,7 +30,7 @@
 	async function handleFileLoad(file: File) {
 		try {
 			const text = await file.text();
-			chunk = JSON.parse(text) as SerializationChunk;
+			chunk = JSON.parse(text) as LionWebJsonChunk;
 			error = null;
 		} catch (e) {
 			console.error('Error loading file:', e);
