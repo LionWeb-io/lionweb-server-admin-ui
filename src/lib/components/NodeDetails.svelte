@@ -5,7 +5,7 @@
 	export let handleNodeClick: (id: string) => void;
 
 	import MetaPointerUI from './MetaPointerUI.svelte';
-	import { getPropertyValue, getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering';
+	import { getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering';
 </script>
 
 {#if node.properties?.length || node.references?.length}
@@ -46,7 +46,7 @@
 								<span class="reference-arrow">→</span>
 								<div class="reference-targets">
 									{#each getReferenceValues(reference) as target}
-                    <span class="reference-target">
+                    <div class="reference-target">
                       {#if target.resolveInfo}
                         <span>{target.resolveInfo}</span>
                       {/if}
@@ -58,7 +58,7 @@
                           ({target.reference})
                         </span>
                       {/if}
-                    </span>
+                    </div>
 									{/each}
 								</div>
 							</div>
@@ -69,3 +69,30 @@
 		{/if}
 	</div>
 {/if}
+
+<style>
+	.reference-target {
+			margin-bottom: 0.25em;
+	}
+
+  .reference-target span {
+      display: inline-block;
+      margin-right: 0.25em;
+  }
+
+  .reference-target span:first-child {
+      color: #333;
+      font-style: italic;
+  }
+
+  .reference-link {
+      color: #2563eb; /* Tailwind blue-600 */
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+  }
+
+  .reference-link:hover {
+      color: #1d4ed8; /* Tailwind blue-700 */
+  }
+</style>
