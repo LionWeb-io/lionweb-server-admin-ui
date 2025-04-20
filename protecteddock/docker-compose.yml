@@ -1,0 +1,113 @@
+services:
+  postgres:
+    image: postgres:16.1
+    restart: always
+    environment:
+      POSTGRES_DB: lionweb_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: lionweb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - internal
+      - public
+
+  model-repository:
+    image: ghcr.io/ftomassetti/model-repository:latest
+    depends_on:
+      - postgres
+    expose:
+      - "3005"
+    networks:
+      - internal
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    ports:
+      - "8080:4180"
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://keycloak:8080/realms/lwrepo
+      OAUTH2_PROXY_CLIENT_ID: lionweb-client
+      OAUTH2_PROXY_CLIENT_SECRET: j8jgBx5lAT0zQvt3MczHBIColOwGAKVb
+      OAUTH2_PROXY_COOKIE_SECRET: LJzDRxnXY3TTvHgRSn9tD0RwzS3qU1VCIZdhO3BrpeE=
+      OAUTH2_PROXY_UPSTREAMS: http://model-repository:3005
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    depends_on:
+      - keycloak
+      - model-repository
+    networks:
+      - internal
+      - public
+
+  adminui-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    ports:
+      - "5174:4180"  # public access now via http://localhost:5174
+    entrypoint: ["/wait-for-it.sh", "keycloak:8080", "--timeout=60", "--", "/bin/oauth2-proxy"]      
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_CLIENT_ID: adminui-client
+      OAUTH2_PROXY_CLIENT_SECRET: hEOEJMwybrbfxp8P18PaPtGemDNjFLxz
+      OAUTH2_PROXY_COOKIE_SECRET: LJzDRxnXY3TTvHgRSn9tD0RwzS3qU1VCIZdhO3BrpeE=
+
+      # Critical settings
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://keycloak:8080/realms/lwrepo
+      OAUTH2_PROXY_LOGIN_URL: http://localhost:8081/realms/lwrepo/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/lwrepo/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/lwrepo/protocol/openid-connect/certs
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:5174/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: http://adminui:5173
+
+      # Runtime and security flags
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+      OAUTH2_PROXY_FORCE_HTTPS: "false"
+      OAUTH2_PROXY_X_FORWARDED_PROTO: http
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY: "true"
+
+      # UI
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: "Keycloak"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    volumes:
+      - ./wait-for-it.sh:/wait-for-it.sh:ro      
+    depends_on:
+      - keycloak
+      - adminui
+    networks:
+      - internal
+      - public      
+
+  adminui:
+    image: ghcr.io/ftomassetti/adminui:latest
+    expose:
+      - "5173"
+    depends_on:
+      - postgres
+      - model-repository
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  keycloak_data:
+
+networks:
+  internal:
+  public:
