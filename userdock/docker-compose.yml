@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16.1
+    restart: always
+    environment:
+      POSTGRES_DB: lionweb_test
+      POSTGRES_PASSWORD: lionweb
+    ports:
+      - '5432:5432'
+
+  model-repository:
+    image: ghcr.io/ftomassetti/model-repository:latest
+    depends_on:
+      - postgres
+    ports:
+      - '3005:3005'
+
+  adminui:
+    image: ghcr.io/ftomassetti/adminui:latest
+    depends_on:
+      - postgres
+      - model-repository
+    ports:
+      - '5173:5173'
