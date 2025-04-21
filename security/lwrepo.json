@@ -1,0 +1,85 @@
+{
+  "realm": "lwrepo",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "adminui-client",
+      "name": "",
+      "description": "",
+      "rootUrl": "http://localhost:5174",
+      "adminUrl": "http://localhost:5174",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "RqwM3RDk0xw5kj4C6BSq12UkZVMoEfXS",
+      "redirectUris": [
+        "http://localhost:5174/*",
+        "http://localhost:5174/",
+        "http://localhost:5174"
+      ],
+      "webOrigins": [
+        "http://localhost:5174"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "client.secret.creation.time": "1745159256",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.url": "http://localhost:5174/oauth2/sign_out",
+        "frontchannel.logout.url": "http://localhost:5174/oauth2/sign_out",
+        "post.logout.redirect.uris": "http://localhost:5174##http://localhost:5174/##http://localhost:5174/oauth2/sign_in##http://localhost:5174/oauth2/sign_out",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "adminui-client",
+            "id.token.claim": "true",
+            "lightweight.claim": "false",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "access": {
+        "view": true,
+        "configure": true,
+        "manage": true
+      }
+    }
+  ]
+}

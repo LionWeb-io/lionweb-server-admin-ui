@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:16.1
+    restart: always
+    environment:
+      POSTGRES_DB: lionweb_test
+      POSTGRES_PASSWORD: lionweb
+    networks:
+      - internal
+    expose:
+      - "5432"
+
+  model-repository:
+    build: docker/model-repository
+    depends_on:
+      - postgres
+    networks:
+      - internal
+    expose:
+      - "3005"
+
+  adminui:
+    build:
+      context: .
+      dockerfile: docker/adminui/Dockerfile
+    depends_on:
+      - model-repository
+    networks:
+      - internal
+    expose:
+      - "5173"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    volumes:
+      - ./security/lwrepo.json:/opt/keycloak/data/import/keycloak-realm.json
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: lionweb_test
+      # KC_DB_SCHEMA: keycloak_schema
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: lionweb
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - internal
+      - public
+
+  oauth2-proxy-repo:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    volumes:
+      - ./security/oauth2-proxy.cfg:/etc/oauth2-proxy.cfg:ro
+    command:
+      - --config=/etc/oauth2-proxy.cfg
+    ports:
+      - "5175:5175"
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak
+      OAUTH2_PROXY_PROVIDER_URL: "http://keycloak:8080/realms/lwrepo"
+      OAUTH2_PROXY_CLIENT_ID: lionweb-client
+      OAUTH2_PROXY_CLIENT_SECRET: super-secret
+      OAUTH2_PROXY_COOKIE_SECRET: "random-string-32-bytes" # generate with openssl rand -base64 32
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:8080/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: "http://model-repository:3005/"
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:5175"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: "^/healthz$"
+      OAUTH2_PROXY_PROXY_PREFIX: "/oauth2"
+      OAUTH2_PROXY_OIDC_ISSUER_URL: "http://keycloak:8080/realms/lwrepo"
+    depends_on:
+      - model-repository
+      - keycloak
+    networks:
+      - internal
+      - public
+
+  oauth2-proxy-admin:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    volumes:
+      - ./security/oauth2-proxy.cfg:/etc/oauth2-proxy.cfg:ro
+    command:
+      - --config=/etc/oauth2-proxy.cfg
+    ports:
+      - "5174:5174"
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak
+      OAUTH2_PROXY_PROVIDER_URL: "http://keycloak:8080/realms/lwrepo"
+      OAUTH2_PROXY_CLIENT_ID: lionweb-client
+      OAUTH2_PROXY_CLIENT_SECRET: super-secret
+      OAUTH2_PROXY_COOKIE_SECRET: "12345678901234567890123456789012" # generate with openssl rand -base64 32
+      OAUTH2_PROXY_REDIRECT_URL: "http://localhost:5174/oauth2/callback"
+      OAUTH2_PROXY_UPSTREAMS: "http://adminui:5173/"
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:5174"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: "^/healthz$"
+      OAUTH2_PROXY_PROXY_PREFIX: "/oauth2"
+      OAUTH2_PROXY_OIDC_ISSUER_URL: "http://keycloak:8080/realms/lwrepo"
+      OAUTH2_PROXY_COOKIE_DOMAIN: "localhost"
+    depends_on:
+      - adminui
+      - model-repository
+      - keycloak
+    networks:
+      - internal
+      - public
+
+networks:
+  internal:
+    internal: true
+  public:
+    external: false
