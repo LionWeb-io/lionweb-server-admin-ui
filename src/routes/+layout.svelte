@@ -1,5 +1,12 @@
 <script lang="ts">
 	import '../app.css';
+
+	function logout() {
+		const keycloakLogoutUrl = encodeURIComponent(
+			'http://localhost:8080/realms/lwrepo/protocol/openid-connect/logout'
+		);
+		window.location.href = `/oauth2/sign_out?rd=${keycloakLogoutUrl}`;
+	}
 </script>
 
 <div class="min-h-screen bg-gray-100">
@@ -32,6 +39,9 @@
 						>
 							Files
 						</a>
+
+						<button on:click={logout}>Logout</button>
+
 					</div>
 				</div>
 			</div>
