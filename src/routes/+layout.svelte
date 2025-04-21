@@ -1,6 +1,16 @@
 <script lang="ts">
 	import '../app.css';
 
+	import { onMount } from 'svelte';
+	import { getUserInfo } from '$lib/utils/user';
+	import { LogOut, User } from 'lucide-svelte';
+
+	let user: { name: string } | null = null;
+
+	onMount(async () => {
+		user = await getUserInfo();
+	});
+
 	function logout() {
 		const keycloakLogoutUrl = encodeURIComponent(
 			'http://localhost:8080/realms/lwrepo/protocol/openid-connect/logout'
@@ -40,8 +50,13 @@
 							Files
 						</a>
 
-						<button on:click={logout}>Logout</button>
-
+						{#if user}
+							<div class="logged-in-block">
+								<User size={16} />
+								<span class="username">{user.name}</span>
+								<button on:click={logout} class="logout"><LogOut size={16} style="margin-right: 0.25rem;" /></button>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -54,3 +69,41 @@
 		</div>
 	</main>
 </div>
+
+<style>
+    .logged-in-block {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background-color: #f5f5f5;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-size: 0.95rem;
+        color: #333;
+				text-align: center;
+    }
+
+    .user-info {
+        font-weight: 500;
+    }
+
+    .username {
+        font-weight: bold;
+        color: #007acc;
+    }
+
+    .logout {
+        background-color: transparent;
+        border: 1px solid #007acc;
+        border-radius: 4px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .logout:hover {
+        background-color: #007acc;
+        color: white;
+    }
+</style>

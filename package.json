@@ -44,6 +44,7 @@
 		"@lionweb/repository-shared": "file:scripts/repo-clone/packages/shared/lionweb-repository-shared-0.3.0.tgz",
 		"@types/jszip": "^3.4.0",
 		"jszip": "^3.10.1",
-		"keycloak-js": "^26.1.5"
+		"keycloak-js": "^26.1.5",
+		"lucide-svelte": "^0.501.0"
 	}
 }
