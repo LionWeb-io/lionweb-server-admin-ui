@@ -67,15 +67,30 @@
 </div>
 
 <style>
+
+		.breadcrumbs {
+				border-top: 1px black solid;
+				margin-top: 1rem;
+				display: inline-flex;
+		}
+
 		.step.root {
 				background-color: #0070f3;
 		}
 
     .step {
 				display: inline-block;
-				border: #2563eb solid 3px;
-				border-radius: 15px;
+				/*border: #2563eb solid 3px;*/
+				/*border-radius: 15px;*/
 				padding: 10px;
-				margin: 10px 10px;
+				/*margin: 10px 10px;*/
+				border-right: 2px solid #0070f3;
+				height: 48px;
+				background-color: #e8e8e8;
 		}
+
+		.step:hover {
+				background-color: #cccccc;
+		}
+
 </style>
