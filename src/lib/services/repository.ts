@@ -10,6 +10,7 @@ import type { LionWebJsonChunk } from '@lionweb/repository-client';
 import type { LionWebJsonNode } from '@lionweb/validation';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
+const PORT = 3005;
 
 export async function getRepositories(): Promise<ListRepositoriesResponse> {
 	const client = new RepositoryClient(CLIENT_ID, null);
@@ -171,13 +172,13 @@ export async function loadPartitionNames(
 	return partitionNames;
 }
 
-export async function downloadRepositoryAsZip(repositoryName: string, 
+export async function downloadRepositoryAsZip(repositoryName: string,
 	progressCallback: (current: number, total: number) => void): Promise<Blob> {
 
 	// Get list of all partitions
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 	const totalPartitions = existingPartitionsIDs.length;
-	
+
 	// Create a new JSZip instance
 	const JSZip = (await import('jszip')).default;
 	const zip = new JSZip();
@@ -186,40 +187,40 @@ export async function downloadRepositoryAsZip(repositoryName: string,
 	for (let i = 0; i < totalPartitions; i++) {
 		const existingPartitionID = existingPartitionsIDs[i];
 		progressCallback(i, totalPartitions);
-		
+
 		// Load the partition data
 		const partitionData = await loadPartition(repositoryName, existingPartitionID);
-		
+
 		// Add it to the zip file
 		zip.file(`${existingPartitionID}.json`, JSON.stringify(partitionData, null, 2));
 	}
-	
+
 	// Final progress update
 	progressCallback(totalPartitions, totalPartitions);
-	
+
 	// Generate the zip file
 	return await zip.generateAsync({ type: "blob" });
 }
 
 export async function uploadRepositoryFromZip(
-	file: File, 
+	file: File,
 	repositoryName: string,
 	progressCallback: (current: number, total: number) => void,
 	handleExistingPartition: (partitionId: string) => Promise<'skip' | 'replace'>
 ): Promise<void> {
 	const JSZip = (await import('jszip')).default;
 	const zip = await JSZip.loadAsync(file);
-	
+
 	// Process each file in the zip
 	const files = Object.values(zip.files).filter((zipFile): zipFile is import('jszip').JSZipObject => !zipFile.dir);
 	const total = files.length;
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
-	
+
 	for (let i = 0; i < files.length; i++) {
 		const zipFile = files[i];
 		progressCallback(i, total);
-		
+
 		const content = await zipFile.async('string');
 		const partitionData: LionWebJsonChunk = JSON.parse(content);
 
@@ -227,7 +228,7 @@ export async function uploadRepositoryFromZip(
 		if (rootsInPartitionData.length != 1) {
 			throw new Error("Not a valid partition. Roots found: " + rootsInPartitionData.length);
 		}
-		
+
 		const partitionID = rootsInPartitionData[0].id;
 		const partitionExists = existingPartitionsIDs.includes(partitionID)
 		let skip = false;
@@ -245,7 +246,7 @@ export async function uploadRepositoryFromZip(
 			await createPartition(repositoryName, partitionData);
 		}
 	}
-	
+
 	// Final progress update
 	progressCallback(total, total);
 }
