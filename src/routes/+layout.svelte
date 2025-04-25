@@ -10,8 +10,10 @@
 	<nav class="bg-white shadow-lg">
 		<div class="mx-auto px-4">
 						<a href="/repositories" class="flex items-center space-x-2">
-							<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-16 w-auto" />
-							<span class="text-xl font-bold text-gray-800">LionWeb Repo Admin Panel</span>
+							<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-20 w-auto" />
+							<p><span class="text-4xl font-bold text-gray-800 headline">
+  LionWeb Repo Admin Panel
+</span></p>
 							<span class="text-s text-gray-800">at http://localhost:3005</span>
 						</a>
 					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -67,6 +69,12 @@
 </div>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@500;700&display=swap');
+
+
+    .headline {
+        font-family: 'Inter', sans-serif;
+    }
 
 		.breadcrumbs {
 				margin-top: 1rem;
