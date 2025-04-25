@@ -75,7 +75,7 @@
 		}
 
 		.step.root {
-				background-color: #0070f3;
+				/*background-color: #0070f3;*/
 		}
 
     .step {
@@ -100,17 +100,24 @@
         padding: 0 15px;
         height: 48px;
         margin-right: 8px;
-        background-color: #f9fafb;
-        border: 2px solid #0070f3;
-        border-radius: 18px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /*background-color: #f9fafb;*/
+        /*border: 2px solid #0070f3;*/
+        /*border-radius: 18px;*/
+        /*box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);*/
+        /*transition: all 0.3s ease;*/
+
+        border-radius: 16px;
+        background-color: #fdfdfd;
+        border: 2px solid #4a5568; /* Slate Gray */
+        box-shadow: 0 2px 6px rgba(74, 85, 104, 0.1); /* Subtle shadow */
         transition: all 0.3s ease;
     }
 
     .step:hover {
-        background: linear-gradient(145deg, #e6e6e6, #ffffff);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        background: linear-gradient(145deg, #f7fafc, #ffffff);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         transform: translateY(-3px);
+        border-color: #2c5282; /* Deep Blue */
     }
 
 </style>
