@@ -69,9 +69,9 @@
 <style>
 
 		.breadcrumbs {
-				border-top: 1px black solid;
 				margin-top: 1rem;
-				display: inline-flex;
+				display: flex;
+				padding: 10px;
 		}
 
 		.step.root {
@@ -79,6 +79,7 @@
 		}
 
     .step {
+        border-top: 1px black solid;
 				display: inline-block;
 				/*border: #2563eb solid 3px;*/
 				/*border-radius: 15px;*/
@@ -92,5 +93,24 @@
 		.step:hover {
 				background-color: #cccccc;
 		}
+
+    .step {
+        display: inline-flex;
+        align-items: center;
+        padding: 0 15px;
+        height: 48px;
+        margin-right: 8px;
+        background-color: #f9fafb;
+        border: 2px solid #0070f3;
+        border-radius: 18px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .step:hover {
+        background: linear-gradient(145deg, #e6e6e6, #ffffff);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        transform: translateY(-3px);
+    }
 
 </style>
