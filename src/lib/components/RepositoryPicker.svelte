@@ -55,7 +55,9 @@
 <style>
     .custom-select {
         position: relative;
-        max-width: 400px;
+        width: 100%;
+        height: 100%;
+        min-width: 250px;
         font-family: sans-serif;
     }
 
@@ -63,73 +65,76 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 5px;
-        background: #fff;
-        border-radius: 5px;
+        padding: 0 0.75rem;
+        background: transparent;
         cursor: pointer;
-        height: 24px;
+        height: 100%;
+        width: 100%;
     }
 
     .option-row {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 0 5px;
-        height: 24px;
+        white-space: nowrap;
+        height: 100%;
     }
 
     .arrow {
         font-size: 12px;
         color: #666;
-        margin-left: 10px;
+        margin-left: 1rem;
+        flex-shrink: 0;
     }
 
     .options {
         position: absolute;
-        top: 100%;
+        top: calc(100% + 4px);
         left: 0;
         right: 0;
         background: white;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         z-index: 1000;
+        padding: 0.5rem 0;
+        min-width: max-content;
+        width: 100%;
     }
 
-		.options .option-row {
-				padding: 15px 10px;
-				border-bottom: 1px solid #ccc;
-				margin: 0 10px 0 10px;
-		}
+    .options .option-row {
+        padding: 0.5rem 0.75rem;
+        transition: background-color 0.2s ease;
+    }
 
     .option-row:hover {
-        background: #f9f9f9;
+        background: #f3f4f6;
     }
 
     .option-title {
-        font-weight: bold;
-        margin-bottom: 5px;
-				display: inline-block;
+        font-weight: 500;
+        color: #374151;
+        margin-right: 0.5rem;
+        flex-shrink: 0;
     }
 
     .badge {
-        font-size: 14px;
-        padding: 6px 10px;
-        border-radius: 10px;
-        background-color: #f0f0f0;
-        display: inline-block;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 500;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .badge.version {
-        color: #0070f3;
-        background-color: #e6f0ff;
-        display: inline-block;
+        color: #1e40af;
+        background-color: #dbeafe;
     }
 
     .badge.history {
-        color: #555;
-        background-color: #f5f5f5;
-        display: inline-block;
+        color: #1f2937;
+        background-color: #f3f4f6;
     }
-
 
 </style>

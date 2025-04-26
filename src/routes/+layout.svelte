@@ -86,7 +86,7 @@
 	.step {
 		display: inline-flex;
 		align-items: center;
-		height: 40px;
+		height: 48px;
 		padding: 0 1rem;
 		background-color: #ffffff;
 		border: 1px solid #e5e7eb;
@@ -106,6 +106,6 @@
 	.chevron {
 		display: flex;
 		align-items: center;
-		height: 40px;
+		height: 48px;
 	}
 </style>
