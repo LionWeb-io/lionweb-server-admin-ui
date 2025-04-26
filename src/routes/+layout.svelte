@@ -9,7 +9,7 @@
 </script>
 
 <div class="min-h-screen bg-gray-100">
-	<nav class="bg-white shadow-lg">
+	<nav class="bg-white shadow-lg sticky top-0 z-30">
 		<div class="mx-auto px-6 py-4">
 			<div class="flex items-center justify-between">
 				<a href="/repositories" class="flex items-center space-x-4">
