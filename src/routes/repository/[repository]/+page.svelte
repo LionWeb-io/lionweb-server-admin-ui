@@ -1,23 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import type { SerializationChunk } from '@lionweb/core';
 	import {
 		listPartitionsIDs,
-		createPartition,
-		deletePartition,
-		loadPartition,
-		loadPartitionNames,
-		getRepositories
+		loadShallowPartitions,
 	} from '$lib/services/repository';
-	import NodeTree from '$lib/components/NodeTree.svelte';
-	import LanguageUI from '$lib/components/LanguageUI.svelte';
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
-	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
 	import { goto } from '$app/navigation';
+	import type { LionWebJsonMetaPointer } from '@lionweb/validation';
+
+	type ViewMode = 'chronological' | 'grouped' | 'alphabetical';
+	let viewMode: ViewMode = 'chronological';
 
 	let repositoryName = $page.params.repository;
-	let partitions: Array<{ id: string; name?: string; isLoaded?: boolean; data?: LionWebJsonChunk }> = [];
+	type PartitionEntry = { id: string; name?: string; isLoaded?: boolean; data?: LionWebJsonChunk; metapointer?: LionWebJsonMetaPointer };
+	let partitions: Array<PartitionEntry> = [];
 	let loading = false;
 	let error: string | null = null;
 	let dragActive = false;
@@ -26,6 +23,56 @@
 	$: {
 		repositoryName = $page.params.repository;
 		loadPartitions();
+	}
+
+	// Compute organized partitions based on view mode
+	$: organizedPartitions = organizePartitions(partitions, viewMode);
+
+	function organizePartitions(partitions: Array<PartitionEntry>, mode: ViewMode) {
+		switch (mode) {
+			case 'chronological':
+				return { type: 'list' as const, items: [...partitions] };
+			case 'grouped':
+				const groups = new Map<string, typeof partitions>();
+				partitions.forEach(partition => {
+					const group = partition.metapointer!!.language+":"+partition.metapointer!!.version+":"+partition.metapointer!!.key;
+					if (!groups.has(group)) {
+						groups.set(group, []);
+					}
+					groups.get(group)!.push(partition);
+				});
+				const metapointers = [...groups.keys()].sort((a, b) => {
+					const partsA = a.split(":")
+					const partsB = b.split(":")
+					const languageComparison = partsA[0].localeCompare(partsB[0]);
+					if (languageComparison !== 0) return languageComparison;
+
+					const versionComparison = partsA[1].localeCompare(partsB[1]);
+					if (versionComparison !== 0) return versionComparison;
+
+					return partsA[2].localeCompare(partsB[2]);
+				});
+				return {
+					type: 'grouped' as const,
+					groups: Array.from(metapointers).map(mp => ({
+						mp,
+						items: groups.get(mp)
+					}))
+				};
+			case 'alphabetical':
+				const namedGroup = {
+					name: 'Named Partitions',
+					items: partitions.filter(partition => partition.name).sort((a, b) => a.name!!.localeCompare(b.name!!))
+				};
+				const unnamedGroup = {
+					name: 'Unnamed Partitions',
+					items: partitions.filter(partition => !partition.name).sort((a, b) => a.id.localeCompare(b.id))
+				};
+				return {
+					type: 'grouped' as const,
+					groups: [namedGroup, unnamedGroup],
+				};
+		}
 	}
 
 	async function loadPartitions() {
@@ -37,13 +84,15 @@
 		try {
 			const partitionsIDs = await listPartitionsIDs(repositoryName);
 			partitions = partitionsIDs.map((id) => ({ id:id, isLoaded: false }));
-			
+
 			// Load shallow data for all partitions in a single request
 			try {
-				const partitionNames = await loadPartitionNames(repositoryName, partitionsIDs);
+				const partitionsData = await loadShallowPartitions(repositoryName, partitionsIDs);
 				// Process each root node to extract names
 				for (const partition of partitions) {
-					partition.name = partitionNames.get(partition.id);
+					const rootNode = partitionsData.get(partition.id)!!;
+					partition.name = rootNode.properties.find(property => property.property.key === 'LionCore-builtins-INamed-name')?.value;
+					partition.metapointer = rootNode.classifier;
 				}
 			} catch (e) {
 				console.error('Error loading partition names:', e);
@@ -86,6 +135,20 @@
 		<div class="px-4 py-5 sm:p-6">
 			<div class="mb-6 flex items-center justify-between">
 				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>
+
+				<!-- View Mode Selector -->
+				<div class="flex items-center space-x-2">
+					<label for="view-mode" class="text-sm font-medium text-gray-700">View:</label>
+					<select
+						id="view-mode"
+						bind:value={viewMode}
+						class="rounded-md border-gray-300 py-1 pl-2 pr-8 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+					>
+						<option value="chronological">Chronological</option>
+						<option value="grouped">Grouped by Type</option>
+						<option value="alphabetical">Alphabetical</option>
+					</select>
+				</div>
 			</div>
 
 			{#if loading}
@@ -103,30 +166,68 @@
 					<p class="text-gray-500">No partitions found in repository "{repositoryName}"</p>
 				</div>
 			{:else}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each partitions.sort((a, b) => a.id.localeCompare(b.id)) as partition}
-						<div 
-							class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
-							on:click={() => handleLoadPartition(partition)}
-						>
-							<div class="px-6 py-4">
-								<div class="flex flex-col">
-									<div class="flex items-center justify-between mb-4">
-										<div class="flex items-center gap-3">
-											<div class="min-w-0">
-												{#if partition.name}
-													<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
-												{/if}
-												<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
+				{#if organizedPartitions.type === 'list'}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{#each organizedPartitions.items as partition}
+							<div
+								class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
+								on:click={() => handleLoadPartition(partition)}
+							>
+								<div class="px-6 py-4">
+									<div class="flex flex-col">
+										<div class="flex items-center justify-between mb-4">
+											<div class="flex items-center gap-3">
+												<div class="min-w-0">
+													{#if partition.name}
+														<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>
+													{/if}
+													<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
+													{#if partition.metapointer}
+														<span class="mt-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+															{partition.metapointer}
+														</span>
+													{/if}
+												</div>
 											</div>
 										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-					{/each}
-				</div>
+						{/each}
+					</div>
+				{:else}
+					<div class="space-y-8">
+						{#each organizedPartitions.groups as group}
+							<div>
+								<h3 class="text-lg font-medium text-gray-900 mb-4">{group.name}</h3>
+								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+									{#each group.items as partition}
+										<div
+											class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
+											on:click={() => handleLoadPartition(partition)}
+										>
+											<div class="px-6 py-4">
+												<div class="flex flex-col">
+													<div class="flex items-center justify-between mb-4">
+														<div class="flex items-center gap-3">
+															<div class="min-w-0">
+																{#if partition.name}
+																	<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>
+																{/if}
+																<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			{/if}
 		</div>
 	</div>
-</div> 
+</div>

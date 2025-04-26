@@ -14,7 +14,7 @@
 				<a href="/repositories" class="flex items-center space-x-4">
 					<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-24 w-auto transition-transform hover:scale-105" />
 					<div>
-						<h1 class="text-4xl font-bold text-gray-800 headline">LionWeb Admin Panel</h1>
+						<h1 class="text-4xl font-bold text-gray-800 headline">LionWeb Repository Admin Panel</h1>
 						<p class="text-sm text-gray-500">at http://localhost:3005</p>
 					</div>
 				</a>
