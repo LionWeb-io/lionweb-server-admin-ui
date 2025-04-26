@@ -8,6 +8,7 @@
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
 	import { goto } from '$app/navigation';
 	import type { LionWebJsonMetaPointer } from '@lionweb/validation';
+	import PartitionCard from '$lib/components/PartitionCard.svelte';
 
 	type ViewMode = 'chronological' | 'grouped' | 'alphabetical';
 	let viewMode: ViewMode = 'chronological';
@@ -84,7 +85,7 @@
 		try {
 			const partitionsIDs = await listPartitionsIDs(repositoryName);
 			partitions = partitionsIDs.map((id) => ({ id:id, isLoaded: false }));
-
+			
 			// Load shallow data for all partitions in a single request
 			try {
 				const partitionsData = await loadShallowPartitions(repositoryName, partitionsIDs);
@@ -133,12 +134,10 @@
 
 	<div class="rounded-lg bg-white shadow">
 		<div class="px-4 py-5 sm:p-6">
-			<div class="mb-6 flex items-center justify-between">
-				<h2 class="text-2xl font-bold text-gray-900">Partitions in Repository {repositoryName}</h2>
-
+			<div class="mb-6 flex items-center justify-end">
 				<!-- View Mode Selector -->
 				<div class="flex items-center space-x-2">
-					<label for="view-mode" class="text-sm font-medium text-gray-700">View:</label>
+					<label for="view-mode" class="text-sm font-medium text-gray-700">Sort by:</label>
 					<select
 						id="view-mode"
 						bind:value={viewMode}
@@ -169,58 +168,19 @@
 				{#if organizedPartitions.type === 'list'}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{#each organizedPartitions.items as partition}
-							<div
-								class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
-								on:click={() => handleLoadPartition(partition)}
-							>
-								<div class="px-6 py-4">
-									<div class="flex flex-col">
-										<div class="flex items-center justify-between mb-4">
-											<div class="flex items-center gap-3">
-												<div class="min-w-0">
-													{#if partition.name}
-														<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>
-													{/if}
-													<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
-													{#if partition.metapointer}
-														<span class="mt-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-															{partition.metapointer}
-														</span>
-													{/if}
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
+							<PartitionCard {partition} onClick={handleLoadPartition} />
 						{/each}
 					</div>
 				{:else}
 					<div class="space-y-8">
 						{#each organizedPartitions.groups as group}
 							<div>
-								<h3 class="text-lg font-medium text-gray-900 mb-4">{group.name}</h3>
+								<h3 class="text-lg font-medium text-gray-900 mb-4">
+									{'mp' in group ? group.mp : group.name}
+								</h3>
 								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-									{#each group.items as partition}
-										<div
-											class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
-											on:click={() => handleLoadPartition(partition)}
-										>
-											<div class="px-6 py-4">
-												<div class="flex flex-col">
-													<div class="flex items-center justify-between mb-4">
-														<div class="flex items-center gap-3">
-															<div class="min-w-0">
-																{#if partition.name}
-																	<h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>
-																{/if}
-																<p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
-															</div>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
+									{#each (group.items || []) as partition}
+										<PartitionCard {partition} onClick={handleLoadPartition} />
 									{/each}
 								</div>
 							</div>
