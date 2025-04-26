@@ -15,7 +15,7 @@
 	$: nodesByType = chunk.nodes.reduce((acc, node) => {
 		const language = node.classifier?.language || 'Unknown';
 		const type = node.classifier?.key || 'Unknown';
-		
+
 		if (!acc[language]) {
 			acc[language] = {};
 		}
@@ -63,12 +63,12 @@
 			/>
 		{:else}
 			<div class="p-4 space-y-4">
-				{#each Object.entries(nodesByType) as [language, types]}
-					<div class="space-y-2">
+				{#each Object.entries(nodesByType).sort(([langA], [langB]) => langA.localeCompare(langB)) as [language, types]}
+				<div class="space-y-2">
 						<h3 class="font-semibold text-lg">{language}</h3>
-						{#each Object.entries(types) as [type, nodes]}
-							<div class="ml-4 space-y-1">
-								<h4 class="font-medium text-sm text-gray-600">{type}</h4>
+					{#each Object.entries(types).sort(([typeA], [typeB]) => typeA.localeCompare(typeB)) as [type, nodes]}
+					<div class="ml-4 space-y-1">
+								<h4 class="font-medium text-sm text-gray-600" style="text-decoration: underline">{type}</h4>
 								{#each nodes as node}
 									<button
 										class="w-full text-left px-2 py-1 rounded hover:bg-gray-100 {selectedNodeId === node.id ? 'bg-blue-50 border border-blue-200' : ''}"
@@ -99,4 +99,4 @@
 			background-color: transparent;
 		}
 	}
-</style> 
+</style>
