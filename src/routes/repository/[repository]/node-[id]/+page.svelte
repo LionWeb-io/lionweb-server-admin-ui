@@ -6,6 +6,7 @@
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
 	import NodeNavigation from '$lib/components/NodeNavigation.svelte';
+	import { tick } from 'svelte';
 
 	let repositoryName = $page.params.repository;
 	let nodeId = $page.params.id;
@@ -13,6 +14,7 @@
 	let error: string | null = null;
 	let expandedNodes = new Set<string>();
 	let partitionData: LionWebJsonChunk | null = null;
+	let selectedNodeId: string | null = null;
 
 	async function loadData() {
 		try {
@@ -32,26 +34,7 @@
 
 	function handleNodeClick(event: CustomEvent<{ nodeId: string }>) {
 		const clickedNodeId = event.detail.nodeId;
-		if (!partitionData) return;
-
-		// Find the node in the tree
-		let currentNode = partitionData.nodes.find((n) => n.id === clickedNodeId);
-		while (currentNode) {
-			expandedNodes.add(currentNode.id);
-			const parentId = currentNode.parent;
-			currentNode = parentId ? partitionData.nodes.find((n) => n.id === parentId) : undefined;
-		}
-		expandedNodes = expandedNodes; // Trigger reactivity
-
-		// Scroll to the node and highlight it
-		setTimeout(() => {
-			const element = document.getElementById(`node-${clickedNodeId}`);
-			if (element) {
-				element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				element.classList.add('highlight-node');
-				setTimeout(() => element.classList.remove('highlight-node'), 2000);
-			}
-		}, 100);
+		handleNodeSelect(clickedNodeId);
 	}
 
 	function handleExpandAll() {
@@ -67,7 +50,41 @@
 		expandedNodes = expandedNodes; // Trigger reactivity
 	}
 
-	function handleNodeSelect(nodeId:string) {}
+	async function handleNodeSelect(nodeId: string) {
+		selectedNodeId = nodeId;
+		if (!partitionData) return;
+
+		// Find the node and expand all its ancestors
+		let currentNode = partitionData.nodes.find((n) => n.id === nodeId);
+		const ancestors = [];
+		while (currentNode?.parent) {
+			ancestors.push(currentNode.parent);
+			currentNode = partitionData.nodes.find((n) => n.id === currentNode?.parent);
+		}
+
+		// Expand all ancestors in reverse order (from root to parent)
+		ancestors.reverse().forEach(ancestorId => {
+			expandedNodes.add(ancestorId);
+		});
+		expandedNodes = expandedNodes; // Trigger reactivity
+
+		// Wait for the DOM to update
+		await tick();
+
+		// Find the element and scroll to it
+		const element = document.getElementById(`node-${nodeId}`);
+		if (element) {
+			// Add highlight animation
+			element.classList.add('highlight-node');
+			setTimeout(() => element.classList.remove('highlight-node'), 2000);
+
+			// Simple scroll into view
+			element.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center'
+			});
+		}
+	}
 
 	onMount(loadData);
 </script>
@@ -76,7 +93,12 @@
 	<!-- Fixed Left Panel -->
 	<div class="w-96 h-screen fixed top-0 left-0 border-r border-gray-200 bg-gray-50 p-4" style="padding-top: 250px">
 		{#if partitionData}
-			<NodeNavigation chunk={partitionData} onNodeSelect={handleNodeSelect} />
+			<NodeNavigation 
+				chunk={partitionData} 
+				onNodeSelect={handleNodeSelect} 
+				selectedNodeId={selectedNodeId}
+				bind:expandedNodes
+			/>
 		{:else}
 			<p>Loading...</p>
 		{/if}
@@ -145,11 +167,12 @@
 
 				<div>
 					<h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
-					<div class="bg-gray-50 rounded-lg p-4">
+					<div class="bg-gray-50 rounded-lg p-4 max-h-[calc(100vh-300px)] overflow-y-auto" id="node-tree-container">
 						<NodeTree
 							chunk={partitionData}
 							bind:expandedNodes
 							on:nodeClick={handleNodeClick}
+							selectedNodeId={selectedNodeId}
 						/>
 					</div>
 				</div>

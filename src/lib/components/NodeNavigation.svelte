@@ -7,9 +7,9 @@
 	export let chunk: LionWebJsonChunk;
 	export let selectedNodeId: string | null = null;
 	export let onNodeSelect: (nodeId: string) => void;
+	export let expandedNodes: Set<string>;
 
 	const activeTab = writable<'outline' | 'byType'>('outline');
-	const expandedNodes = new Set<string>();
 
 	// Group nodes by language and type
 	$: nodesByType = chunk.nodes.reduce((acc, node) => {
@@ -28,12 +28,6 @@
 
 	function handleNodeClick(nodeId: string) {
 		onNodeSelect(nodeId);
-		// Ensure all ancestors are expanded
-		let currentNode = chunk.nodes.find(n => n.id === nodeId);
-		while (currentNode?.parent) {
-			expandedNodes.add(currentNode.parent);
-			currentNode = chunk.nodes.find(n => n.id === currentNode?.parent);
-		}
 	}
 </script>
 
@@ -58,8 +52,11 @@
 			<NodeOutline
 				{chunk}
 				{expandedNodes}
-				on:nodeClick={({ detail }) => handleNodeClick(detail.nodeId)}
 				{selectedNodeId}
+				on:nodeClick={({ detail }) => {
+					console.log("select from outline", detail.nodeId);
+					handleNodeClick(detail.nodeId)
+				}}
 			/>
 		{:else}
 			<div class="p-4 space-y-4">
@@ -72,7 +69,10 @@
 								{#each nodes as node}
 									<button
 										class="w-full text-left px-2 py-1 rounded hover:bg-gray-100 {selectedNodeId === node.id ? 'bg-blue-50 border border-blue-200' : ''}"
-										on:click={() => handleNodeClick(node.id)}
+										on:click={() => {
+											console.log("select from by type", node.id);
+											handleNodeClick(node.id);
+										}}
 									>
 										{node.id}
 									</button>

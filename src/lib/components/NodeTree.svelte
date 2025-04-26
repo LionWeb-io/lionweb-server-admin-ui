@@ -16,6 +16,7 @@
 	export let expandedNodes: Set<string> = new Set();
 	export let level: number = 0;
 	export let nodeId: string | null = null;
+	export let selectedNodeId: string | null = null;
 	let allContainments = chunk.nodes
 		.map((container: LionWebJsonNode) => container.containments)
 		.flat();
@@ -122,10 +123,10 @@
 			: getChildNodes(nodeId);
 </script>
 
-<div class="space-y-2">
+<div class="space-y-2 overflow-y-auto">
 	{#each nodes as node:LionWebJsonNode}
 		<div
-			class="rounded p-2"
+			class="rounded p-2 {selectedNodeId === node.id ? 'highlight-node' : ''}"
 			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"
 			id="node-{node.id}"
 		>
@@ -172,7 +173,7 @@
 							<NodeDetails {node} {handleNodeClick} />
 						</div>
 					{:else}
-						<div class="flex-grow rounded border p-2 max-w-2xl" style="background-color: white">
+						<div class="flex-grow rounded border p-2 max-w-2xl {selectedNodeId === node.id ? 'selected-node' : ''} node-panel-selectable" style="background-color: white" on:click={() => handleNodeClick(node.id)}>
 							<div class="node-header">
 								<p class="font-medium break-all min-w-0">🔹 {node.id || 'Unknown'}</p>
 								<div class="classifier flex-shrink-0">
@@ -190,7 +191,7 @@
 				</div>
 			</div>
 			{#if expandedNodes.has(node.id)}
-				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick />
+				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick {selectedNodeId} />
 			{/if}
 		</div>
 	{/each}
@@ -259,6 +260,11 @@
 		}
 	}
 
+	.selected-node {
+		border: 2px solid #3b82f6;
+		box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	}
+
 	.node-header {
 		display: flex;
 		justify-content: space-between;
@@ -277,5 +283,9 @@
 	.containment-role {
 		margin-left: 1.5rem;
 		margin-bottom: 0.5rem;
+	}
+
+	.node-panel-selectable {
+		cursor: pointer;
 	}
 </style>
