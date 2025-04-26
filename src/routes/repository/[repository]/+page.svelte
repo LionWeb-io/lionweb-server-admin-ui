@@ -4,6 +4,7 @@
 	import {
 		listPartitionsIDs,
 		loadShallowPartitions,
+		createPartition,
 	} from '$lib/services/repository';
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
 	import { goto } from '$app/navigation';
@@ -121,6 +122,65 @@
 		}
 	}
 
+	function handleDragEnter(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		dragActive = true;
+	}
+
+	function handleDragLeave(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		dragActive = false;
+	}
+
+	function handleDragOver(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+	}
+
+	async function handleDrop(e: DragEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+		dragActive = false;
+
+		const files = e.dataTransfer?.files;
+		if (!files || files.length === 0) return;
+
+		const file = files[0];
+		try {
+			const content = await file.text();
+			const jsonContent = JSON.parse(content);
+
+			// Validate the basic structure
+			if (!jsonContent.serializationFormatVersion || !Array.isArray(jsonContent.nodes)) {
+				throw new Error('Invalid file format. Expected a LionWeb serialization chunk.');
+			}
+
+			await handleCreatePartition(jsonContent);
+		} catch (err) {
+			error = `Failed to process file: ${err instanceof Error ? err.message : 'Unknown error'}`;
+		}
+	}
+
+	async function handleCreatePartition(originalChunk: LionWebJsonChunk) {
+		try {
+			loading = true;
+			error = null;
+
+			await createPartition(repositoryName, originalChunk);
+			await loadPartitions();
+
+			// Show success message
+			error = null;
+		} catch (e) {
+			console.error('Error in handleCreatePartition:jsonContent', e);
+			error = `Failed to create partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+		} finally {
+			loading = false;
+		}
+	}
+
 	onMount(async () => {
 		await loadPartitions();
 	});
@@ -132,6 +192,44 @@
 		<img src="/images/lionweb-logo.png" alt="" class="h-[800px] w-[800px] object-contain" />
 	</div>
 
+	<!-- Drag and Drop Area -->
+	<div class="rounded-lg bg-white shadow mb-4">
+		<div class="px-4 py-5 sm:p-6">
+			<div
+				class="rounded-lg border-2 border-dashed p-8 text-center transition-colors duration-200 ease-in-out"
+				class:border-indigo-600={dragActive}
+				class:border-gray-300={!dragActive}
+				class:bg-indigo-50={dragActive}
+				on:dragenter={handleDragEnter}
+				on:dragleave={handleDragLeave}
+				on:dragover={handleDragOver}
+				on:drop={handleDrop}
+			>
+				<div class="text-gray-600">
+					<svg
+						class="mx-auto h-12 w-12 text-gray-400"
+						stroke="currentColor"
+						fill="none"
+						viewBox="0 0 48 48"
+						aria-hidden="true"
+					>
+						<path
+							d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					<p class="mt-2">Drag and drop a LionWeb JSON file here to create a new partition</p>
+					<p class="mt-1 text-sm text-gray-500">
+						The file should contain a valid LionWeb serialization chunk
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Partitions List -->
 	<div class="rounded-lg bg-white shadow">
 		<div class="px-4 py-5 sm:p-6">
 			<div class="mb-6 flex items-center justify-end">
