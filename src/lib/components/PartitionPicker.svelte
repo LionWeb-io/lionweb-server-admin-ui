@@ -15,7 +15,7 @@
 
 			const partitionIDs = await listPartitionsIDs(repositoryName);
 			partitions = partitionIDs.map(id => ({ id }));
-			
+
 			// Load partition names
 			const partitionNames = await loadPartitionNames(repositoryName, partitionIDs);
 			partitions = partitions.map(p => ({
@@ -40,7 +40,7 @@
 	function selectOption(partition: { id: string; name?: string }) {
 		selected = partition;
 		isOpen = false;
-		goto(`/${$page.params.repository}/node-${partition.id}`);
+		goto(`/repository/${$page.params.repository}/node-${partition.id}`);
 	}
 </script>
 

@@ -16,6 +16,13 @@
 	let partitionData: LionWebJsonChunk | null = null;
 	let selectedNodeId: string | null = null;
 
+	// React to URL changes
+	$: {
+		repositoryName = $page.params.repository;
+		nodeId = $page.params.id;
+		loadData();
+	}
+
 	async function loadData() {
 		try {
 			loading = true;
