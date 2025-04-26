@@ -5,6 +5,7 @@
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
 	import type { LionWebJsonChunk } from '@lionweb/repository-client';
+	import { currentNodeName } from '$lib/stores/currentNodeName';
 
 	let repositoryName = $page.params.repository;
 	let nodeId = $page.params.id;
@@ -12,6 +13,7 @@
 	let error: string | null = null;
 	let expandedNodes = new Set<string>();
 	let partitionData: LionWebJsonChunk | null = null;
+	let nodeRefs = {};
 
 	async function loadData() {
 		try {
@@ -21,9 +23,16 @@
 			partitionData = await loadPartition(repositoryName, nodeId);
 			console.log('Got partition data', partitionData);
 
+			// Find the node and its name property
+			const node = partitionData.nodes.find((n) => n.id === nodeId);
+			const nameProp = node?.properties.find(
+				(p) => p.property.key === 'LionCore-builtins-INamed-name'
+			);
+			currentNodeName.set(nameProp?.value ?? nodeId);
 		} catch (e) {
 			error = `Failed to load partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
+			currentNodeName.set(nodeId);
 		} finally {
 			loading = false;
 		}
@@ -136,6 +145,7 @@
 							chunk={partitionData}
 							bind:expandedNodes
 							on:nodeClick={handleNodeClick}
+							nodeRefs={nodeRefs}
 						/>
 					</div>
 				</div>

@@ -11,11 +11,31 @@
 	import NodeDetails from '$lib/components/NodeDetails.svelte';
 	import type { LionWebJsonNode } from '@lionweb/validation/src/json/LionWebJson';
 	import type { LionWebJsonChunk } from '@lionweb/validation';
+	import { currentNodeName } from '$lib/stores/currentNodeName';
+	import { onMount, onDestroy, afterUpdate } from 'svelte';
 
 	export let chunk: LionWebJsonChunk;
 	export let expandedNodes: Set<string> = new Set();
 	export let level: number = 0;
 	export let nodeId: string | null = null;
+	export let visibleNodeId: string | null = null;
+	let localVisibleNodeId: string | null = null;
+	let observer: IntersectionObserver;
+	let visibleEntries: Record<string, { ratio: number; level: number }> = {};
+	export let nodeRefs: Record<string, { el: HTMLElement, level: number }> | undefined;
+
+	if (level === 0 && !nodeRefs) {
+		nodeRefs = {};
+	}
+
+	if (level === 0) {
+		observer = new IntersectionObserver(updateMostVisibleNode, {
+			root: null,
+			rootMargin: '0px',
+			threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
+		});
+	}
+
 	let allContainments = chunk.nodes
 		.map((container: LionWebJsonNode) => container.containments)
 		.flat();
@@ -24,6 +44,8 @@
 		.flat());
 
 	const dispatch = createEventDispatcher();
+
+	let nodeElements: Record<string, HTMLElement> = {};
 
 	function getRole(nodeId: string): MetaPointer | undefined {
 		return allContainments.find((containment: SerializedContainment) =>
@@ -116,19 +138,141 @@
 		return siblingAnnotations?.at(0) === node.id;
 	}
 
+	function getNodeName(node: LionWebJsonNode): string {
+		const nameProp = node.properties?.find(
+			(p) => p.property.key === 'LionCore-builtins-INamed-name'
+		);
+		return nameProp?.value ?? node.id;
+	}
+
+	function updateMostVisibleNode(entries: IntersectionObserverEntry[]) {
+		for (const entry of entries) {
+			const nodeId = entry.target.getAttribute('data-node-id');
+			const nodeLevel = Number(entry.target.getAttribute('data-level'));
+			if (!nodeId) continue;
+			if (entry.isIntersecting) {
+				visibleEntries[nodeId] = { ratio: entry.intersectionRatio, level: nodeLevel };
+			} else {
+				delete visibleEntries[nodeId];
+			}
+		}
+		// Find the deepest node (highest level), tiebreaker: highest intersection ratio
+		let mostVisibleId: string | null = null;
+		let maxLevel = -1;
+		let maxRatio = 0;
+		for (const [id, { ratio, level }] of Object.entries(visibleEntries)) {
+			if (level > maxLevel || (level === maxLevel && ratio > maxRatio)) {
+				maxLevel = level;
+				maxRatio = ratio;
+				mostVisibleId = id;
+			}
+		}
+		if (mostVisibleId !== localVisibleNodeId) {
+			localVisibleNodeId = mostVisibleId;
+			if (mostVisibleId) {
+				const node = chunk.nodes.find((n) => n.id === mostVisibleId);
+				if (node) {
+					currentNodeName.set(getNodeName(node));
+				}
+			}
+		}
+		if (!mostVisibleId) {
+			localVisibleNodeId = null;
+		}
+	}
+
+	function registerNodeRefAction(el: HTMLElement, params: { nodeId: string, level: number }) {
+		console.log('registerNodeRefAction called', el, params);
+		if (el && params && nodeRefs) {
+			nodeRefs[params.nodeId] = { el, level: params.level };
+			return {
+				destroy() {
+					delete nodeRefs[params.nodeId];
+				}
+			};
+		}
+	}
+
+	function updateActiveNodeByScroll() {
+		console.log('Scroll handler called');
+		const viewportCenter = window.innerHeight / 2;
+		let minDist = Infinity;
+		let maxLevel = -1;
+		let activeId: string | null = null;
+		console.log('nodeRefs:', nodeRefs);
+		for (const [id, { el, level }] of Object.entries(nodeRefs ?? {})) {
+			const rect = el.getBoundingClientRect();
+			console.log('Checking node', id, 'level', level, 'rect', rect);
+			if (rect.top <= window.innerHeight && rect.bottom >= 0) { // visible
+				const nodeCenter = (rect.top + rect.bottom) / 2;
+				const dist = Math.abs(nodeCenter - viewportCenter);
+				if (
+					level > maxLevel ||
+					(level === maxLevel && dist < minDist)
+				) {
+					maxLevel = level;
+					minDist = dist;
+					activeId = id;
+				}
+			}
+		}
+		console.log('Selected activeId:', activeId);
+		if (activeId !== localVisibleNodeId) {
+			localVisibleNodeId = activeId;
+			if (activeId) {
+				const node = chunk.nodes.find((n) => n.id === activeId);
+				if (node) {
+					currentNodeName.set(getNodeName(node));
+				}
+			}
+		}
+		if (!activeId) {
+			localVisibleNodeId = null;
+		}
+	}
+
+	function onScrollOrResize() {
+		updateActiveNodeByScroll();
+	}
+
+	onMount(() => {
+		if (level === 0) {
+			window.addEventListener('scroll', onScrollOrResize, { passive: true });
+			window.addEventListener('resize', onScrollOrResize, { passive: true });
+			// Initial update after DOM is ready
+			setTimeout(updateActiveNodeByScroll, 100);
+		}
+	});
+
+	afterUpdate(() => {
+		if (level === 0) {
+			setTimeout(updateActiveNodeByScroll, 0);
+		}
+	});
+
+	onDestroy(() => {
+		if (level === 0) {
+			window.removeEventListener('scroll', onScrollOrResize);
+			window.removeEventListener('resize', onScrollOrResize);
+		}
+	});
+
+	$: effectiveVisibleNodeId = level === 0 ? localVisibleNodeId : visibleNodeId;
+
 	$: nodes =
 		nodeId === null
 			? chunk?.nodes?.filter((node) => !node.parent) || [] // Root nodes
 			: getChildNodes(nodeId);
+
+	function highlightClass(nodeId: string) {
+		// Always return the highlight class for debugging
+		return 'ring-4 ring-indigo-400 shadow-lg shadow-indigo-300 bg-yellow-200';
+	}
 </script>
 
 <div class="space-y-2">
 	{#each nodes as node:LionWebJsonNode}
-		<div
-			class="rounded p-2"
-			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"
-			id="node-{node.id}"
-		>
+		<div class="rounded p-2">
 			<div class="flex flex-col space-y-2">
 				{#if allRoles.get(node.id) != null && isFirstNodeInContainment(node)}
 					<div class="containment-role">
@@ -155,7 +299,15 @@
 						<span class="w-4"></span>
 					{/if}
 					{#if isAnnotation(node)}
-						<div class="flex-grow rounded border-l-4 border-yellow-400 bg-yellow-100 bg-opacity-20 p-2 max-w-2xl shadow-sm rounded-r">
+						<div
+							class={`flex-grow rounded border-l-4 border-yellow-400 bg-yellow-100 bg-opacity-20 p-2 max-w-2xl shadow-sm rounded-r ${highlightClass(node.id)}`}
+						>
+							<span style="font-size:10px; color:blue;">
+								node.id: {node.id} | effectiveVisibleNodeId: {effectiveVisibleNodeId}
+							</span>
+							{#if effectiveVisibleNodeId === node.id}
+								<span style="color: red; font-weight: bold;">ACTIVE</span>
+							{/if}
 							<div class="flex items-center justify-between mb-1">
 								<p class="font-medium text-yellow-800 text-sm break-all min-w-0">
 									📝 {node.id || 'Unknown'}
@@ -168,11 +320,19 @@
 									/>
 								</div>
 							</div>
-
 							<NodeDetails {node} {handleNodeClick} />
 						</div>
 					{:else}
-						<div class="flex-grow rounded border p-2 max-w-2xl" style="background-color: white">
+						<div
+							class={`flex-grow rounded border p-2 max-w-2xl ${highlightClass(node.id)}`}
+							style="background-color: white"
+						>
+							<span style="font-size:10px; color:blue;">
+								node.id: {node.id} | effectiveVisibleNodeId: {effectiveVisibleNodeId}
+							</span>
+							{#if effectiveVisibleNodeId === node.id}
+								<span style="color: red; font-weight: bold;">ACTIVE</span>
+							{/if}
 							<div class="node-header">
 								<p class="font-medium break-all min-w-0">🔹 {node.id || 'Unknown'}</p>
 								<div class="classifier flex-shrink-0">
@@ -183,14 +343,13 @@
 									/>
 								</div>
 							</div>
-
 							<NodeDetails {node} {handleNodeClick} />
 						</div>
 					{/if}
 				</div>
 			</div>
 			{#if expandedNodes.has(node.id)}
-				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick />
+				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} visibleNodeId={effectiveVisibleNodeId} nodeRefs={nodeRefs} on:nodeClick />
 			{/if}
 		</div>
 	{/each}
@@ -279,3 +438,6 @@
 		margin-bottom: 0.5rem;
 	}
 </style>
+
+<!-- Force Tailwind to include highlight classes -->
+<div class="hidden ring-4 ring-indigo-400 ring-red-500 shadow-lg shadow-indigo-300"></div>
