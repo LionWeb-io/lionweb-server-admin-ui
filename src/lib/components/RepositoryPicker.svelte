@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
+	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+
 	const repositoryName = "Foo Repository";
-	const repositories = [
+	const repositories: RepositoryConfiguration[] = [
 		{
 			name: "Foo Repository",
 			lionweb_version: "2023.1",
@@ -22,7 +24,7 @@
 		isOpen = !isOpen;
 	}
 
-	function selectOption(option) {
+	function selectOption(option: RepositoryConfiguration) {
 		selected = option;
 		isOpen = false;
 	}
@@ -60,19 +62,20 @@
     .selected {
         display: flex;
         align-items: center;
-        justify-content: space-between; /* Space between option content and arrow */
+        justify-content: space-between;
         padding: 0 5px;
-        /*border: 1px solid #ccc;*/
         background: #fff;
         border-radius: 5px;
         cursor: pointer;
+        height: 24px;
     }
 
     .option-row {
         display: flex;
         align-items: center;
-        gap: 8px; /* spacing between title and badges */
-				padding: 5px;
+        gap: 8px;
+        padding: 0 5px;
+        height: 24px;
     }
 
     .arrow {

@@ -31,6 +31,6 @@ export let onClick = () => {};
     .icon {
         width: 24px;
         height: 24px;
-				color: white;
+        color: #4b5563;
     }
 </style>

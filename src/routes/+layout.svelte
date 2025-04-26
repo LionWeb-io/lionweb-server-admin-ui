@@ -8,55 +8,63 @@
 
 <div class="min-h-screen bg-gray-100">
 	<nav class="bg-white shadow-lg">
-		<div class="mx-auto px-4">
-						<a href="/repositories" class="flex items-center space-x-2">
-							<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-20 w-auto" />
-							<p><span class="text-4xl font-bold text-gray-800 headline">
-  LionWeb Repo Admin Panel
-</span></p>
-							<span class="text-s text-gray-800">at http://localhost:3005</span>
-						</a>
-					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-<!--						<a-->
-<!--							href="/repositories"-->
-<!--							class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"-->
-<!--						>-->
-<!--							Repositories-->
-<!--						</a>-->
-<!--						<a-->
-<!--							href="/partitions"-->
-<!--							class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"-->
-<!--						>-->
-<!--							Partitions-->
-<!--						</a>-->
-<!--						<a-->
-<!--							href="/files"-->
-<!--							class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"-->
-<!--						>-->
-<!--							Files-->
-<!--						</a>-->
+		<div class="mx-auto px-6 py-4">
+			<div class="flex items-center justify-between">
+				<a href="/repositories" class="flex items-center space-x-4">
+					<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-24 w-auto transition-transform hover:scale-105" />
+					<div>
+						<h1 class="text-4xl font-bold text-gray-800 headline">LionWeb Admin Panel</h1>
+						<p class="text-sm text-gray-500">at http://localhost:3005</p>
 					</div>
+				</a>
+			</div>
 
-
-		</div>
-		<div class="breadcrumbs">
-			<div class="step root">
-				<InstanceRootLink/>
-			</div>
-			<div class="step repository">
-				<RepositoryPicker/>
-			</div>
-			<div class="step partition">
-				<PartitionPicker/>
-			</div>
-			<div class="step node">
-				<NodePicker/>
-			</div>
-			<div class="step node">
-				<NodePicker/>
-			</div>
-			<div class="step node">
-				<NodePicker/>
+			<div class="mt-6 flex items-center space-x-2">
+				<div class="breadcrumbs flex items-center space-x-2 p-2">
+					<div class="step root">
+						<InstanceRootLink/>
+					</div>
+					<div class="chevron text-gray-400">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div class="step repository">
+						<RepositoryPicker/>
+					</div>
+					<div class="chevron text-gray-400">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div class="step partition">
+						<PartitionPicker/>
+					</div>
+					<div class="chevron text-gray-400">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div class="step node">
+						<NodePicker/>
+					</div>
+					<div class="chevron text-gray-400">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div class="step node">
+						<NodePicker/>
+					</div>
+					<div class="chevron text-gray-400">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+						</svg>
+					</div>
+					<div class="step node">
+						<NodePicker/>
+					</div>
+				</div>
 			</div>
 		</div>
 	</nav>
@@ -69,63 +77,35 @@
 </div>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@500;700&display=swap');
+	@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@500;700&display=swap');
 
+	.headline {
+		font-family: 'Inter', sans-serif;
+	}
 
-    .headline {
-        font-family: 'Inter', sans-serif;
-    }
+	.step {
+		display: inline-flex;
+		align-items: center;
+		height: 40px;
+		padding: 0 1rem;
+		background-color: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.5rem;
+		transition: all 0.2s ease;
+	}
 
-		.breadcrumbs {
-				margin-top: 1rem;
-				display: flex;
-				padding: 10px;
-		}
+	.step:hover {
+		border-color: #3b82f6;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
 
-		.step.root {
-				/*background-color: #0070f3;*/
-		}
+	.step.root {
+		background-color: #f3f4f6;
+	}
 
-    .step {
-        border-top: 1px black solid;
-				display: inline-block;
-				/*border: #2563eb solid 3px;*/
-				/*border-radius: 15px;*/
-				padding: 10px;
-				/*margin: 10px 10px;*/
-				border-right: 2px solid #0070f3;
-				height: 48px;
-				background-color: #e8e8e8;
-		}
-
-		.step:hover {
-				background-color: #cccccc;
-		}
-
-    .step {
-        display: inline-flex;
-        align-items: center;
-        padding: 0 15px;
-        height: 48px;
-        margin-right: 8px;
-        /*background-color: #f9fafb;*/
-        /*border: 2px solid #0070f3;*/
-        /*border-radius: 18px;*/
-        /*box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);*/
-        /*transition: all 0.3s ease;*/
-
-        border-radius: 16px;
-        background-color: #fdfdfd;
-        border: 2px solid #4a5568; /* Slate Gray */
-        box-shadow: 0 2px 6px rgba(74, 85, 104, 0.1); /* Subtle shadow */
-        transition: all 0.3s ease;
-    }
-
-    .step:hover {
-        background: linear-gradient(145deg, #f7fafc, #ffffff);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        transform: translateY(-3px);
-        border-color: #2c5282; /* Deep Blue */
-    }
-
+	.chevron {
+		display: flex;
+		align-items: center;
+		height: 40px;
+	}
 </style>
