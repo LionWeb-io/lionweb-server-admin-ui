@@ -10,7 +10,6 @@ import type { LionWebJsonChunk } from '@lionweb/repository-client';
 import type { LionWebJsonNode } from '@lionweb/validation';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
-const PORT = 3005;
 
 export async function getRepositories(): Promise<ListRepositoriesResponse> {
 	const client = new RepositoryClient(CLIENT_ID, null);
