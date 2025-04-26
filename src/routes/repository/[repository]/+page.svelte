@@ -147,19 +147,31 @@
 		const files = e.dataTransfer?.files;
 		if (!files || files.length === 0) return;
 
-		const file = files[0];
 		try {
-			const content = await file.text();
-			const jsonContent = JSON.parse(content);
+			loading = true;
+			error = null;
 
-			// Validate the basic structure
-			if (!jsonContent.serializationFormatVersion || !Array.isArray(jsonContent.nodes)) {
-				throw new Error('Invalid file format. Expected a LionWeb serialization chunk.');
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				if (file.name.endsWith('.json')) {
+					const content = await file.text();
+					const jsonContent = JSON.parse(content);
+
+					// Validate the basic structure
+					if (!jsonContent.serializationFormatVersion || !Array.isArray(jsonContent.nodes)) {
+						throw new Error('Invalid file format. Expected a LionWeb serialization chunk.');
+					}
+
+					await handleCreatePartition(jsonContent);
+				}
 			}
 
-			await handleCreatePartition(jsonContent);
+			// Show success message
+			error = null;
 		} catch (err) {
 			error = `Failed to process file: ${err instanceof Error ? err.message : 'Unknown error'}`;
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -266,7 +278,7 @@
 				{#if organizedPartitions.type === 'list'}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{#each organizedPartitions.items as partition}
-							<PartitionCard {partition} onClick={handleLoadPartition} />
+							<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
 						{/each}
 					</div>
 				{:else}
@@ -278,7 +290,7 @@
 								</h3>
 								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 									{#each (group.items || []) as partition}
-										<PartitionCard {partition} onClick={handleLoadPartition} />
+										<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
 									{/each}
 								</div>
 							</div>

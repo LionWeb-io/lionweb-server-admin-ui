@@ -2,14 +2,28 @@
     import type { LionWebJsonChunk } from '@lionweb/repository-client';
     import type { LionWebJsonMetaPointer } from '@lionweb/validation';
     import { page } from '$app/stores';
-    import { loadPartition, deletePartition } from '$lib/services/repository';
+    import { loadPartition, deletePartition, createPartition } from '$lib/services/repository';
+    import { createEventDispatcher } from 'svelte';
 
     export let partition: { id: string; name?: string; isLoaded?: boolean; data?: LionWebJsonChunk; metapointer?: LionWebJsonMetaPointer };
     export let onClick: (partition: { id: string }) => void;
 
+    const dispatch = createEventDispatcher();
+
     let showDeleteConfirm = false;
     let loading = false;
     let error: string | null = null;
+    let isDragging = false;
+
+    function handleDragOver(event: DragEvent) {
+        event.preventDefault();
+        isDragging = true;
+    }
+
+    function handleDragLeave(event: DragEvent) {
+        event.preventDefault();
+        isDragging = false;
+    }
 
     async function handleDownload() {
         try {
@@ -41,8 +55,39 @@
 
             await deletePartition($page.params.repository, partition.id);
             showDeleteConfirm = false;
+            dispatch('deleted');
         } catch (e) {
             error = `Failed to delete partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
+            console.error('Error details:', e);
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function handleDrop(event: DragEvent) {
+        event.preventDefault();
+        isDragging = false;
+
+        if (!event.dataTransfer) return;
+
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length === 0) return;
+
+        try {
+            loading = true;
+            error = null;
+
+            for (const file of files) {
+                if (file.name.endsWith('.json')) {
+                    const content = await file.text();
+                    const partitionData: LionWebJsonChunk = JSON.parse(content);
+                    await createPartition($page.params.repository, partitionData);
+                }
+            }
+
+            dispatch('partitionsCreated');
+        } catch (e) {
+            error = `Failed to create partitions: ${e instanceof Error ? e.message : 'Unknown error'}`;
             console.error('Error details:', e);
         } finally {
             loading = false;
@@ -51,65 +96,79 @@
 </script>
 
 <div 
-    class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200 cursor-pointer"
-    on:click={() => onClick(partition)}
+    class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow hover:shadow-md transition-shadow duration-200"
 >
     <div class="px-6 py-4">
         <div class="flex flex-col">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="min-w-0">
-                        {#if partition.name}
-                            <h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
-                        {/if}
-                        <p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
-                        {#if partition.metapointer}
-                            <span class="mt-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                                {partition.metapointer.language}:{partition.metapointer.version}:{partition.metapointer.key}
-                            </span>
-                        {/if}
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button
-                        on:click|stopPropagation={handleDownload}
-                        class="inline-flex items-center rounded-full border border-transparent p-2 text-indigo-600 hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-                        title="Download Partition"
+            <div class="min-w-0">
+                {#if partition.name}
+                    <h3 class="text-lg font-semibold text-gray-900">{partition.name}</h3>												
+                {/if}
+                <p class="text-xs text-gray-500 uppercase tracking-wide break-all max-w-[200px]">{partition.id}</p>
+                {#if partition.metapointer}
+                    <span class="mt-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                        {partition.metapointer.language}:{partition.metapointer.version}:{partition.metapointer.key}
+                    </span>
+                {/if}
+            </div>
+            <div class="flex justify-end mt-4 gap-2">
+                <button
+                    on:click|stopPropagation={() => onClick(partition)}
+                    class="inline-flex items-center rounded-full border border-transparent p-2 text-gray-600 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none"
+                    title="View Partition"
+                >
+                    <svg
+                        class="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
                     >
-                        <svg
-                            class="h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
-                        <span class="sr-only">Download</span>
-                    </button>
-                    <button
-                        on:click|stopPropagation={() => showDeleteConfirm = true}
-                        class="inline-flex items-center rounded-full border border-transparent p-2 text-red-600 hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
-                        title="Delete Partition"
+                        <path
+                            fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    <span class="sr-only">View</span>
+                </button>
+                <button
+                    on:click|stopPropagation={handleDownload}
+                    class="inline-flex items-center rounded-full border border-transparent p-2 text-indigo-600 hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+                    title="Download Partition"
+                >
+                    <svg
+                        class="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
                     >
-                        <svg
-                            class="h-5 w-5"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fill-rule="evenodd"
-                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                clip-rule="evenodd"
-                            />
-                        </svg>
-                        <span class="sr-only">Delete</span>
-                    </button>
-                </div>
+                        <path
+                            fill-rule="evenodd"
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    <span class="sr-only">Download</span>
+                </button>
+                <button
+                    on:click|stopPropagation={() => showDeleteConfirm = true}
+                    class="inline-flex items-center rounded-full border border-transparent p-2 text-red-600 hover:bg-red-50 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
+                    title="Delete Partition"
+                >
+                    <svg
+                        class="h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    <span class="sr-only">Delete</span>
+                </button>
             </div>
         </div>
     </div>
