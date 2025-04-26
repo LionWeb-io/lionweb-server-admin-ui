@@ -2,9 +2,10 @@
 	import '../app.css';
 	import RepositoryPicker from '$lib/components/RepositoryPicker.svelte';
 	import PartitionPicker from '$lib/components/PartitionPicker.svelte';
-	import NodePicker from '$lib/components/NodePicker.svelte';
 	import InstanceRootLink from '$lib/components/InstanceRootLink.svelte';
 	import { page } from '$app/stores';
+
+	$: isNodeDetailsPage = Boolean($page.params.repository && $page.params.id);
 </script>
 
 <div class="min-h-screen bg-gray-100">
@@ -52,8 +53,8 @@
 		</div>
 	</nav>
 
-	<main class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-		<div class="px-4 py-6 sm:px-0">
+	<main class={isNodeDetailsPage ? 'w-full py-6 px-2 max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl py-6 sm:px-6 lg:px-8'}>
+		<div class={isNodeDetailsPage ? 'py-6' : 'px-4 py-6 sm:px-0'}>
 			<slot />
 		</div>
 	</main>
