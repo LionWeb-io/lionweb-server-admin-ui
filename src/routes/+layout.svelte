@@ -4,6 +4,7 @@
 	import PartitionPicker from '$lib/components/PartitionPicker.svelte';
 	import NodePicker from '$lib/components/NodePicker.svelte';
 	import InstanceRootLink from '$lib/components/InstanceRootLink.svelte';
+	import { page } from '$app/stores';
 </script>
 
 <div class="min-h-screen bg-gray-100">
@@ -19,53 +20,35 @@
 				</a>
 			</div>
 
-			<div class="mt-6 flex items-center space-x-2">
-				<div class="breadcrumbs flex items-center space-x-2 p-2">
-					<div class="step root">
-						<InstanceRootLink/>
-					</div>
-					<div class="chevron text-gray-400">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<div class="step repository">
-						<RepositoryPicker/>
-					</div>
-					<div class="chevron text-gray-400">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<div class="step partition">
-						<PartitionPicker/>
-					</div>
-					<div class="chevron text-gray-400">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<div class="step node">
-						<NodePicker/>
-					</div>
-					<div class="chevron text-gray-400">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<div class="step node">
-						<NodePicker/>
-					</div>
-					<div class="chevron text-gray-400">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-						</svg>
-					</div>
-					<div class="step node">
-						<NodePicker/>
+			{#if $page.url.pathname !== '/'}
+				<div class="mt-6 flex items-center space-x-2">
+					<div class="breadcrumbs flex items-center space-x-2 p-2">
+						<div class="step root">
+							<InstanceRootLink/>
+						</div>
+						<div class="chevron text-gray-400">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+							</svg>
+						</div>
+						{#if $page.params.repository}
+							<div class="step repository">
+								<RepositoryPicker/>
+							</div>
+							{#if $page.params.id}
+								<div class="chevron text-gray-400">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+									</svg>
+								</div>
+								<div class="step partition">
+									<PartitionPicker/>
+								</div>
+							{/if}
+						{/if}
 					</div>
 				</div>
-			</div>
+			{/if}
 		</div>
 	</nav>
 

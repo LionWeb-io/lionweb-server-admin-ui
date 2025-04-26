@@ -375,7 +375,7 @@
 										<span class="sr-only">Download</span>
 									</button>
 									<a
-										href="/partitions?repository={repository.name}"
+										href="/repository/{repository.name}"
 										class="inline-flex items-center rounded-full border border-transparent p-2 text-indigo-600 hover:bg-indigo-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
 										title="Explore Repository"
 									>

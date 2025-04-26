@@ -1,24 +1,25 @@
 <script lang="ts">
 	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { getRepositories } from '$lib/services/repository';
+	import { onMount } from 'svelte';
 
-	const repositoryName = "Foo Repository";
-	const repositories: RepositoryConfiguration[] = [
-		{
-			name: "Foo Repository",
-			lionweb_version: "2023.1",
-			history: false
-		},
-		{
-			name: "Other Repository",
-			lionweb_version: "2024.1",
-			history: true
-		},
-	];
-	function handleRepositoryChange() {
-
-	}
-	let selected = repositories[0];
+	let repositories: RepositoryConfiguration[] = [];
 	let isOpen = false;
+	let selected: RepositoryConfiguration | null = null;
+
+	onMount(async () => {
+		try {
+			const response = await getRepositories();
+			if (response.success) {
+				repositories = response.repositories;
+				selected = repositories.find(r => r.name === $page.params.repository) || repositories[0];
+			}
+		} catch (e) {
+			console.error('Error loading repositories:', e);
+		}
+	});
 
 	function toggleDropdown() {
 		isOpen = !isOpen;
@@ -27,14 +28,20 @@
 	function selectOption(option: RepositoryConfiguration) {
 		selected = option;
 		isOpen = false;
+		goto(`/repository/${option.name}`);
 	}
 </script>
+
 <div class="custom-select">
 	<div class="selected" on:click={toggleDropdown}>
 		<div class="option-row">
-			<span class="option-title">{selected.name}</span>
-			<span class="badge version">{selected.lionweb_version}</span>
-			<span class="badge history">{selected.history ? 'History enabled' : 'No history'}</span>
+			{#if selected}
+				<span class="option-title">{selected.name}</span>
+				<span class="badge version">{selected.lionweb_version}</span>
+				<span class="badge history">{selected.history ? 'History enabled' : 'No history'}</span>
+			{:else}
+				<span class="option-title">Loading...</span>
+			{/if}
 		</div>
 		<span class="arrow">{isOpen ? '▲' : '▼'}</span>
 	</div>
@@ -44,7 +51,7 @@
 			{#each repositories as option}
 				<li class="option-row" on:click={() => selectOption(option)}>
 					<span class="option-title">{option.name}</span>
-						<span class="badge version">{option.lionweb_version}</span>
+					<span class="badge version">{option.lionweb_version}</span>
 					<span class="badge history">{option.history ? 'History enabled' : 'No history'}</span>
 				</li>
 			{/each}
@@ -136,5 +143,4 @@
         color: #1f2937;
         background-color: #f3f4f6;
     }
-
 </style>
