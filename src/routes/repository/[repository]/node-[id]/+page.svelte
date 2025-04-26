@@ -98,11 +98,11 @@
 
 <div class="flex min-h-screen bg-white">
 	<!-- Fixed Left Panel -->
-	<div class="w-96 h-screen fixed top-0 left-0 border-r border-gray-200 bg-gray-50 p-4" style="padding-top: 250px">
+	<div class="w-120 h-screen fixed top-0 left-0 border-r border-gray-200 bg-gray-50 p-4" style="padding-top: 250px">
 		{#if partitionData}
-			<NodeNavigation 
-				chunk={partitionData} 
-				onNodeSelect={handleNodeSelect} 
+			<NodeNavigation
+				chunk={partitionData}
+				onNodeSelect={handleNodeSelect}
 				selectedNodeId={selectedNodeId}
 				bind:expandedNodes
 			/>
@@ -112,7 +112,7 @@
 	</div>
 
 	<!-- Main Content Area -->
-	<div class="flex-1 ml-96 flex flex-col">
+	<div class="flex-1 ml-120 flex flex-col">
 	<!-- Header -->
 	<div class="border-b border-gray-200 px-6 py-4">
 		<div class="flex items-center justify-between">
