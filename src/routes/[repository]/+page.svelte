@@ -22,12 +22,6 @@
 	let error: string | null = null;
 	let dragActive = false;
 
-	// React to repository changes
-	$: {
-		repositoryName = $page.params.repository;
-		loadPartitions();
-	}
-
 	async function loadPartitions() {
 		if (!repositoryName) return;
 
@@ -62,7 +56,7 @@
 			error = null;
 
 			// Navigate to the exploration state
-			await goto(`/repository/${repositoryName}/node-${partition.id}`);
+			await goto(`/${repositoryName}/node-${partition.id}`);
 		} catch (e) {
 			error = `Failed to load partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
