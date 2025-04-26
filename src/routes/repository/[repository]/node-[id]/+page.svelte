@@ -17,9 +17,10 @@
 		try {
 			loading = true;
 			error = null;
-
+			console.log('Loading partition', repositoryName, nodeId);
 			partitionData = await loadPartition(repositoryName, nodeId);
-			
+			console.log('Got partition data', partitionData);
+
 		} catch (e) {
 			error = `Failed to load partition: ${e instanceof Error ? e.message : 'Unknown error'}`;
 			console.error('Error details:', e);
@@ -68,13 +69,45 @@
 	onMount(loadData);
 </script>
 
-<div class="relative min-h-screen">
-	<!-- Background Logo -->
-	<div class="pointer-events-none fixed inset-0 flex items-center justify-center opacity-[0.02]">
-		<img src="/images/lionweb-logo.png" alt="" class="h-[800px] w-[800px] object-contain" />
+<div class="min-h-screen bg-white">
+	<!-- Header -->
+	<div class="border-b border-gray-200 px-6 py-4">
+		<div class="flex items-center justify-between">
+			<div>
+				<h3 class="text-lg font-medium text-gray-900">
+					{partitionData ? `Node ${nodeId}` : 'Loading...'}
+				</h3>
+				<p class="mt-1 text-sm text-gray-500">Repository: {repositoryName}</p>
+			</div>
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					on:click={handleExpandAll}
+					title="Expand All"
+				>
+					<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+					</svg>
+					Expand All
+				</button>
+				<button
+					type="button"
+					class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					on:click={handleCollapseAll}
+					title="Collapse All"
+				>
+					<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+					</svg>
+					Collapse All
+				</button>
+			</div>
+		</div>
 	</div>
 
-	<div class="rounded-lg bg-white shadow">
+	<!-- Content -->
+	<div class="px-6 py-4">
 		{#if loading}
 			<div class="py-12 text-center">
 				<div class="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
@@ -84,56 +117,26 @@
 				<p class="text-red-600">{error}</p>
 			</div>
 		{:else if partitionData}
-			<div class="px-6 py-4">
-				<div class="flex items-center justify-between mb-6">
-					<h2 class="text-2xl font-bold text-gray-900">Partition Explorer</h2>
-					<div class="flex items-center gap-2">
-						<button
-							type="button"
-							class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-							on:click={handleExpandAll}
-							title="Expand All"
-						>
-							<svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-							</svg>
-							Expand All
-						</button>
-						<button
-							type="button"
-							class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-							on:click={handleCollapseAll}
-							title="Collapse All"
-						>
-							<svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-							</svg>
-							Collapse All
-						</button>
-					</div>
-				</div>
-
-				<div class="space-y-6">
-					{#if partitionData.languages.length > 0}
-						<div>
-							<h4 class="text-sm font-medium text-gray-700 mb-2">Languages</h4>
-							<div class="flex flex-wrap gap-2">
-								{#each partitionData.languages as language}
-									<LanguageUI language={language.key} version={language.version} />
-								{/each}
-							</div>
-						</div>
-					{/if}
-
+			<div class="space-y-6">
+				{#if partitionData.languages.length > 0}
 					<div>
-						<h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
-						<div class="bg-gray-50 rounded-lg p-4">
-							<NodeTree
-								chunk={partitionData}
-								bind:expandedNodes
-								on:nodeClick={handleNodeClick}
-							/>
+						<h4 class="text-sm font-medium text-gray-700 mb-2">Languages</h4>
+						<div class="flex flex-wrap gap-2">
+							{#each partitionData.languages as language}
+								<LanguageUI language={language.key} version={language.version} />
+							{/each}
 						</div>
+					</div>
+				{/if}
+
+				<div>
+					<h4 class="text-sm font-medium text-gray-700 mb-2">Nodes</h4>
+					<div class="bg-gray-50 rounded-lg p-4">
+						<NodeTree
+							chunk={partitionData}
+							bind:expandedNodes
+							on:nodeClick={handleNodeClick}
+						/>
 					</div>
 				</div>
 			</div>
@@ -154,4 +157,4 @@
 	:global(.highlight-node) {
 		animation: highlight 2s ease-out;
 	}
-</style> 
+</style>
