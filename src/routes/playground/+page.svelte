@@ -139,12 +139,20 @@ output_div.appendChild(img)`;
 	}
 </script>
 
-<div class="flex min-h-screen bg-white">
+<div class="flex h-[calc(100vh-var(--header-height))] bg-white">
 	<!-- Main Content Area -->
-	<div class="flex-1 flex flex-col items-center justify-start py-8">
-		<div class="w-full max-w-[95vw]">
+	<div class="flex-1 flex flex-col items-center justify-start">
+		<div class="w-full max-w-[95vw] h-full">
 			<div class="border-b border-gray-200 px-6 py-4">
-				<h1 class="text-2xl font-semibold text-gray-900">Python Playground</h1>
+				<div class="flex items-center gap-4">
+					<button 
+						class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+						on:click={runCode}
+					>
+						Run
+					</button>
+					<h1 class="text-2xl font-semibold text-gray-900">Python Playground</h1>
+				</div>
 				<p class="mt-1 text-sm text-gray-500">Interactive Python REPL powered by Pyodide and lionweb-python</p>
 			</div>
 			{#if loading}
@@ -158,30 +166,22 @@ output_div.appendChild(img)`;
 				{#if error}
 					<div class="text-red-600 p-4">{error}</div>
 				{/if}
-				<div class="flex flex-row gap-4 p-4">
+				<div class="flex flex-row gap-4 p-4 h-[calc(100%-8rem)]">
 					<!-- Code Editor Section -->
 					<div class="flex-1 flex flex-col">
-						<div class="mb-2 flex justify-end">
-							<button 
-								class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-								on:click={runCode}
-							>
-								Run
-							</button>
-						</div>
 						{#if monacoLoaded}
 							<div class="flex-1">
 								<MonacoEditor
 									value={code}
 									language="python"
 									theme="vs-dark"
-									height="calc(100vh - 200px)"
+									height="100%"
 									onChange={handleCodeChange}
 								/>
 							</div>
 						{:else}
 							<textarea 
-								class="w-full border rounded p-2 font-mono text-sm h-[calc(100vh-200px)]" 
+								class="w-full border rounded p-2 font-mono text-sm h-full" 
 								bind:value={code}
 								placeholder="Loading Monaco editor..."
 							></textarea>
@@ -190,9 +190,8 @@ output_div.appendChild(img)`;
 
 					<!-- Output Section -->
 					<div class="flex-1 flex flex-col">
-						<h2 class="text-sm font-semibold text-gray-700 mb-2">Output:</h2>
 						<div class="flex-1">
-							<pre id="output" class="output h-[calc(100vh-200px)]"></pre>
+							<pre id="output" class="output h-full"></pre>
 						</div>
 					</div>
 				</div>
