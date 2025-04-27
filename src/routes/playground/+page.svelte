@@ -11,7 +11,7 @@
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 
 	let pyodide: any = null;
-	let code = 'import lionweb\nprint(lionweb.__version__)';
+	let code = 'from lionwebpython.repoclient.repo_client import RepoClient\nrc = RepoClient()\nfor repo in rc.list_repositories():\n    print("Repo %s\\n" % repo.name)';
 	let output = '';
 	let loading = true;
 	let error = '';
@@ -37,14 +37,23 @@
 		try {
 			await loadPyodideScript();
 			pyodide = await window.loadPyodide({ 
-				indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/",
-				stdout: (text: string) => {
-					output += text;
-				},
-				stderr: (text: string) => {
-					output += text;
-				}
+				indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/"
 			});
+			
+			// Set up custom print function
+			pyodide.runPython(`
+				from js import document
+				import sys
+				import io
+				class CustomIO(io.StringIO):
+					def write(self, text):
+						document.getElementById('output').textContent += text
+					def flush(self):
+						pass
+				sys.stdout = CustomIO()
+				sys.stderr = CustomIO()
+			`);
+
 			await pyodide.loadPackage('micropip');
 			await pyodide.runPythonAsync(`import micropip\nawait micropip.install(\"pydantic\")\nawait micropip.install(\"lionweb-python==0.1.16\")`);
 			monacoLoaded = true;
@@ -56,14 +65,17 @@
 	});
 
 	async function runCode() {
-		output = '';
+		const outputElement = document.getElementById('output');
+		if (outputElement) {
+			outputElement.textContent = '';
+		}
 		try {
-			let result = await pyodide.runPythonAsync(code);
-			if (result !== undefined) {
-				output += result.toString();
-			}
+			await pyodide.runPythonAsync(code);
 		} catch (e) {
-			output = (e instanceof Error) ? e.message : String(e);
+			const errorMessage = (e instanceof Error) ? e.message : String(e);
+			if (outputElement) {
+				outputElement.textContent = errorMessage;
+			}
 		}
 	}
 
@@ -120,7 +132,7 @@
 					</div>
 					<div class="mt-4">
 						<h2 class="text-sm font-semibold text-gray-700 mb-1">Output:</h2>
-						<pre class="bg-gray-100 rounded p-2 min-h-[2em] text-sm overflow-x-auto whitespace-pre-wrap">{output}</pre>
+						<pre id="output" class="output"></pre>
 					</div>
 				</div>
 			{/if}
@@ -133,4 +145,15 @@
 		border: 1px solid #e5e7eb;
 		border-radius: 0.375rem;
 	}
-</style> 
+
+	.output {
+		background-color: #f3f4f6;
+		border-radius: 0.375rem;
+		padding: 1rem;
+		min-height: 2em;
+		font-family: monospace;
+		font-size: 0.875rem;
+		white-space: pre;
+		overflow-x: auto;
+	}
+</style>
