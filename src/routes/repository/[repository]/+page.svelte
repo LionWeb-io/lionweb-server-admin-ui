@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 	import type { LionWebJsonMetaPointer } from '@lionweb/validation';
 	import PartitionCard from '$lib/components/PartitionCard.svelte';
+	import { getNodeName } from '$lib/utils/noderendering';
 
 	type ViewMode = 'chronological' | 'grouped' | 'alphabetical';
 	let viewMode: ViewMode = 'chronological';
@@ -86,14 +87,14 @@
 		try {
 			const partitionsIDs = await listPartitionsIDs(repositoryName);
 			partitions = partitionsIDs.map((id) => ({ id:id, isLoaded: false }));
-			
+
 			// Load shallow data for all partitions in a single request
 			try {
 				const partitionsData = await loadShallowPartitions(repositoryName, partitionsIDs);
 				// Process each root node to extract names
 				for (const partition of partitions) {
 					const rootNode = partitionsData.get(partition.id)!!;
-					partition.name = rootNode.properties.find(property => property.property.key === 'LionCore-builtins-INamed-name')?.value;
+					partition.name = getNodeName(rootNode);
 					partition.metapointer = rootNode.classifier;
 				}
 			} catch (e) {

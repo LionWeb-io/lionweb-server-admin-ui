@@ -2,14 +2,11 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
 	import type { LionWebJsonChunk, LionWebJsonNode } from '@lionweb/validation';
-	import NodeOutline from './NodeOutline.svelte';
+	import { getQualifiedNodeRepresentation, splitQualifiedName } from '$lib/utils/noderendering';
 
 	export let chunk: LionWebJsonChunk;
 	export let selectedNodeId: string | null = null;
 	export let onNodeSelect: (nodeId: string) => void;
-	export let expandedNodes: Set<string>;
-
-	const activeTab = writable<'outline' | 'byType'>('outline');
 	const expandedLanguages = writable<Set<string>>(new Set());
 	const expandedTypes = writable<Set<string>>(new Set());
 
@@ -92,11 +89,18 @@
 									{#if $expandedTypes.has(`${language}-${type}`)}
 										<div class="space-y-1">
 											{#each nodes as node}
+												{@const nodeInfo = getQualifiedNodeRepresentation(chunk.nodes, node)}
 												<button
 													class="w-full text-left px-2 py-1 rounded hover:bg-gray-100 {selectedNodeId === node.id ? 'bg-blue-50 border border-blue-200' : ''}"
 													on:click={() => handleNodeClick(node.id)}
 												>
-													{node.id}
+													{#if nodeInfo.isId}
+														<span class={'font-mono text-sm text-gray-600'}>{nodeInfo.text}</span>
+													{:else}
+														{@const parts = splitQualifiedName(nodeInfo.text)}
+														<span class={'font-medium text-gray-500'}>{parts.prefix}</span>
+														<span class={'font-medium text-gray-900'}>{parts.simpleName}</span>
+													{/if}
 												</button>
 											{/each}
 										</div>

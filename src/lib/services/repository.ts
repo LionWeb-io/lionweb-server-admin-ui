@@ -8,6 +8,7 @@ import type {
 import { RepositoryClient } from '@lionweb/repository-client';
 import type { LionWebJsonChunk } from '@lionweb/repository-client';
 import type { LionWebJsonNode } from '@lionweb/validation';
+import { getNodeName } from '$lib/utils/noderendering';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
@@ -165,7 +166,7 @@ export async function loadPartitionNames(
 
 	const partitionNames = new Map<string, string | undefined>();
 	response.body.chunk.nodes.forEach((node) => {
-		const name = node.properties.find((property) => property.property.key === 'LionCore-builtins-INamed-name')?.value;
+		const name = getNodeName(node);
 		partitionNames.set(node.id, name);
 	});
 	return partitionNames;
