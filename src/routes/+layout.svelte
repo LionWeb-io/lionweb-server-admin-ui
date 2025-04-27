@@ -9,19 +9,18 @@
 </script>
 
 <div class="min-h-screen bg-gray-100">
-	<nav class="bg-white shadow-lg sticky top-0 z-30">
+	<nav class="bg-white shadow-lg top-0 z-30 header">
 		<div class="mx-auto px-6 py-4">
 			<div class="flex items-center justify-between">
 				<a href="/repositories" class="flex items-center space-x-4">
-					<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-24 w-auto transition-transform hover:scale-105" />
+					<img src="/images/lionweb-logo.png" alt="LionWeb Logo" class="h-18 w-auto transition-transform hover:scale-105" />
 					<div>
-						<h1 class="text-4xl font-bold text-gray-800 headline">LionWeb Repository Admin Panel</h1>
+						<h1 class="text-3xl font-bold text-gray-800 headline">LionWeb Repository Admin Panel</h1>
 						<p class="text-sm text-gray-500">at http://localhost:3005</p>
 					</div>
 				</a>
 			</div>
 
-			{#if $page.url.pathname !== '/'}
 				<div class="mt-6 flex items-center space-x-2">
 					<div class="breadcrumbs flex items-center space-x-2 p-2">
 						<div class="step root">
@@ -49,12 +48,11 @@
 						{/if}
 					</div>
 				</div>
-			{/if}
 		</div>
 	</nav>
 
-	<main class={isNodeDetailsPage ? 'w-full py-6 px-2 max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl py-6 sm:px-6 lg:px-8'}>
-		<div class={isNodeDetailsPage ? 'py-6' : 'px-4 py-6 sm:px-0'}>
+	<main class={isNodeDetailsPage ? 'w-full py-6 px-2 ' : 'py-6 sm:px-6 lg:px-8'}>
+		<div class={isNodeDetailsPage ? 'py-6 max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl px-4 py-6 sm:px-0'}>
 			<slot />
 		</div>
 	</main>
@@ -62,6 +60,24 @@
 
 <style>
 	@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@500;700&display=swap');
+
+  :root {
+      --header-height: 11.5em;
+  }
+
+	.header {
+      width: 100%;
+      height: var(--header-height);
+      position: absolute;
+	}
+
+	main {
+			position: absolute;
+			top: var(--header-height);
+      width: 100%;
+			height: calc(100% - var(--header-height));
+			overflow-y: scroll;
+	}
 
 	.headline {
 		font-family: 'Inter', sans-serif;
