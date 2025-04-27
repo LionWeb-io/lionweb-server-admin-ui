@@ -115,7 +115,7 @@
 	<div class="flex-1 ml-120 flex flex-col">
 	<!-- Header -->
 	<div class="border-b border-gray-200 px-6 py-4">
-		<div class="flex items-center justify-between">
+		<div class="flex items-center justify-end">
 			<div class="flex items-center gap-2">
 				<button
 					type="button"
