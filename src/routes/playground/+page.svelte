@@ -11,7 +11,48 @@
 	import MonacoEditor from '$lib/components/MonacoEditor.svelte';
 
 	let pyodide: any = null;
-	let code = 'from lionwebpython.repoclient.repo_client import RepoClient\nrc = RepoClient()\nfor repo in rc.list_repositories():\n    print("Repo %s\\n" % repo.name)';
+	let code = `from lionwebpython.repoclient.repo_client import RepoClient
+import matplotlib.pyplot as plt
+import io
+import base64
+from js import document
+
+# Step 1: Connect to Repo and gather data
+rc = RepoClient()
+repo_names = []
+partition_counts = []
+
+for repo in rc.list_repositories():
+    rc_specific = RepoClient(repository_name=repo.name)
+    partitions = rc_specific.list_partitions()
+    repo_names.append(repo.name)
+    partition_counts.append(len(partitions))
+    print(f"Repo: {repo.name}, Partitions: {len(partitions)}")
+
+# Step 2: Plot histogram
+plt.figure(figsize=(10, 6))
+plt.bar(repo_names, partition_counts, color='skyblue')
+plt.xlabel('Repository')
+plt.ylabel('Number of Partitions')
+plt.title('Histogram of Partitions per Repository')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+
+# Save plot to bytes buffer
+buf = io.BytesIO()
+plt.savefig(buf, format='png', bbox_inches='tight', dpi=100)
+buf.seek(0)
+image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+buf.close()
+plt.close()  # Close the figure to free memory
+
+# Display in HTML
+output_div = document.getElementById('output')
+img = document.createElement('img')
+img.style.maxWidth = '100%'
+img.style.height = 'auto'
+img.src = f'data:image/png;base64,{image_base64}'
+output_div.appendChild(img)`;
 	let output = '';
 	let loading = true;
 	let error = '';
@@ -54,11 +95,25 @@
 				sys.stderr = CustomIO()
 			`);
 
+			// Load required packages
+			await pyodide.loadPackage(['matplotlib', 'numpy']);
 			await pyodide.loadPackage('micropip');
-			await pyodide.runPythonAsync(`import micropip\nawait micropip.install(\"pydantic\")\nawait micropip.install(\"lionweb-python==0.1.16\")`);
+			await pyodide.runPythonAsync(`
+				import micropip
+				await micropip.install("pydantic")
+				await micropip.install("lionweb-python==0.1.16")
+				await micropip.install("ipython")
+			`);
+
+			// Set up matplotlib to work in Pyodide
+			pyodide.runPython(`
+				import matplotlib
+				matplotlib.use('Agg')  # Use Agg backend for non-interactive plotting
+			`);
+
 			monacoLoaded = true;
 		} catch (e) {
-			error = 'Failed to load Pyodide or lionweb-python: ' + ((e instanceof Error) ? e.message : e);
+			error = 'Failed to load Pyodide or required packages: ' + ((e instanceof Error) ? e.message : e);
 		} finally {
 			loading = false;
 		}
@@ -96,7 +151,7 @@
 				<div class="flex items-center justify-center h-64">
 					<div class="text-center">
 						<div class="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
-						<p class="mt-4 text-sm text-gray-500">Loading Python environment and lionweb-python...</p>
+						<p class="mt-4 text-sm text-gray-500">Loading Python environment and required packages...</p>
 					</div>
 				</div>
 			{:else}
