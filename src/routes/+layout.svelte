@@ -51,8 +51,8 @@
 		</div>
 	</nav>
 
-	<main class={isNodeDetailsPage ? 'w-full py-6 px-2 ' : 'py-6 sm:px-6 lg:px-8'}>
-		<div class={isNodeDetailsPage ? 'py-6 max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl px-4 py-6 sm:px-0'}>
+	<main class={isNodeDetailsPage ? 'w-full px-2 ' : 'py-6 sm:px-6 lg:px-8'}>
+		<div class={isNodeDetailsPage ? 'max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl px-4 py-6 sm:px-0'}>
 			<slot />
 		</div>
 	</main>

@@ -98,7 +98,7 @@
 
 <div class="flex min-h-screen bg-white">
 	<!-- Fixed Left Panel -->
-	<div class="w-120 h-screen fixed top-0 left-0 border-r border-gray-200 bg-gray-50 p-4" style="padding-top: 250px">
+	<div class="w-120 h-screen fixed top-0 left-0 border-r border-gray-200 bg-gray-50 p-4" style="padding-top: var(--header-height)">
 		{#if partitionData}
 			<NodeNavigation
 				chunk={partitionData}

@@ -10,6 +10,8 @@
 	export let expandedNodes: Set<string>;
 
 	const activeTab = writable<'outline' | 'byType'>('outline');
+	const expandedLanguages = writable<Set<string>>(new Set());
+	const expandedTypes = writable<Set<string>>(new Set());
 
 	// Group nodes by language and type
 	$: nodesByType = chunk.nodes.reduce((acc, node) => {
@@ -29,34 +31,80 @@
 	function handleNodeClick(nodeId: string) {
 		onNodeSelect(nodeId);
 	}
+
+	function toggleLanguage(language: string) {
+		expandedLanguages.update(set => {
+			const newSet = new Set(set);
+			if (newSet.has(language)) {
+				newSet.delete(language);
+			} else {
+				newSet.add(language);
+			}
+			return newSet;
+		});
+	}
+
+	function toggleType(language: string, type: string) {
+		expandedTypes.update(set => {
+			const key = `${language}-${type}`;
+			const newSet = new Set(set);
+			if (newSet.has(key)) {
+				newSet.delete(key);
+			} else {
+				newSet.add(key);
+			}
+			return newSet;
+		});
+	}
 </script>
 
 <div class="flex flex-col h-full">
-	<div class="flex border-b bg-white sticky top-0 z-10">
-		<h2>Nodes ty type</h2>
+	<div class="flex border-b bg-white sticky top-0 z-10 p-4">
+		<h2 class="text-xl font-semibold text-gray-800">Nodes by Type</h2>
 	</div>
 
 	<div class="flex-1 overflow-y-auto bg-white">
-		<div class="p-4 space-y-4">
+		<div class="p-4 space-y-6">
 			{#each Object.entries(nodesByType).sort(([langA], [langB]) => langA.localeCompare(langB)) as [language, types]}
-			<div class="space-y-2">
-					<h3 class="font-semibold text-lg">{language}</h3>
-				{#each Object.entries(types).sort(([typeA], [typeB]) => typeA.localeCompare(typeB)) as [type, nodes]}
-				<div class="ml-4 space-y-1">
-							<h4 class="font-medium text-sm text-gray-600" style="text-decoration: underline">{type}</h4>
-							{#each nodes as node}
-								<button
-									class="w-full text-left px-2 py-1 rounded hover:bg-gray-100 {selectedNodeId === node.id ? 'bg-blue-50 border border-blue-200' : ''}"
-									on:click={() => {
-										console.log("select from by type", node.id);
-										handleNodeClick(node.id);
-									}}
-								>
-									{node.id}
-								</button>
+				<div class="border rounded-lg overflow-hidden">
+					<button
+						class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100"
+						on:click={() => toggleLanguage(language)}
+					>
+						<h3 class="font-semibold text-lg text-gray-800">{language}</h3>
+						<span class="text-gray-500">
+							{$expandedLanguages.has(language) ? '▼' : '▶'}
+						</span>
+					</button>
+					{#if $expandedLanguages.has(language)}
+						<div class="p-3 space-y-4">
+							{#each Object.entries(types).sort(([typeA], [typeB]) => typeA.localeCompare(typeB)) as [type, nodes]}
+								<div class="border-l-2 border-gray-200 pl-3">
+									<button
+										class="w-full flex items-center justify-between mb-2"
+										on:click={() => toggleType(language, type)}
+									>
+										<h4 class="font-medium text-sm text-gray-600">{type}</h4>
+										<span class="text-gray-500">
+											{$expandedTypes.has(`${language}-${type}`) ? '▼' : '▶'}
+										</span>
+									</button>
+									{#if $expandedTypes.has(`${language}-${type}`)}
+										<div class="space-y-1">
+											{#each nodes as node}
+												<button
+													class="w-full text-left px-2 py-1 rounded hover:bg-gray-100 {selectedNodeId === node.id ? 'bg-blue-50 border border-blue-200' : ''}"
+													on:click={() => handleNodeClick(node.id)}
+												>
+													{node.id}
+												</button>
+											{/each}
+										</div>
+									{/if}
+								</div>
 							{/each}
 						</div>
-					{/each}
+					{/if}
 				</div>
 			{/each}
 		</div>
