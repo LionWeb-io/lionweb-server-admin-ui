@@ -175,7 +175,7 @@
 					{:else}
 						<div class="flex-grow rounded border p-2 max-w-2xl {selectedNodeId === node.id ? 'selected-node' : ''} node-panel-selectable" style="background-color: white" on:click={() => handleNodeClick(node.id)}>
 							<div class="node-header">
-								<p class="font-medium break-all min-w-0">🔹 {node.id || 'Unknown'}</p>
+								<p class="font-medium break-all min-w-0 node-id">🔹 {node.id || 'Unknown'}</p>
 								<div class="classifier flex-shrink-0">
 									<MetaPointerUI
 										language={node.classifier?.language}
@@ -287,5 +287,9 @@
 
 	.node-panel-selectable {
 		cursor: pointer;
+	}
+
+	.node-id {
+			min-width: 30%;
 	}
 </style>
