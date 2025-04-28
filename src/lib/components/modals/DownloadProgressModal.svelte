@@ -5,7 +5,7 @@
 
 {#if show}
 	<div
-		class="fixed inset-0 z-10 overflow-y-auto"
+		class="fixed inset-0 z-50 overflow-y-auto"
 		aria-labelledby="modal-title"
 		role="dialog"
 		aria-modal="true"
@@ -14,7 +14,7 @@
 			class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0"
 		>
 			<div
-				class="bg-opacity-75 fixed inset-0 bg-gray-500 transition-opacity"
+				class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
 				aria-hidden="true"
 			></div>
 			<span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true"
