@@ -14,6 +14,7 @@
 
 	type ViewMode = 'chronological' | 'grouped' | 'alphabetical';
 	let viewMode: ViewMode = 'chronological';
+	let collapsedGroups = new Set<string>();
 
 	let repositoryName = $page.params.repository;
 	type PartitionEntry = { id: string; name?: string; isLoaded?: boolean; data?: LionWebJsonChunk; metapointer?: LionWebJsonMetaPointer };
@@ -286,14 +287,43 @@
 					<div class="space-y-8">
 						{#each organizedPartitions.groups as group}
 							<div>
-								<h3 class="text-lg font-medium text-gray-900 mb-4">
-									{'mp' in group ? group.mp : group.name}
-								</h3>
-								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-									{#each (group.items || []) as partition}
-										<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
-									{/each}
-								</div>
+								<button
+									class="flex items-center justify-between w-full text-left text-lg font-medium text-gray-900 mb-4 hover:text-indigo-600"
+									on:click={() => {
+										const key = 'mp' in group ? group.mp : group.name;
+										if (collapsedGroups.has(key)) {
+											collapsedGroups.delete(key);
+										} else {
+											collapsedGroups.add(key);
+										}
+										collapsedGroups = collapsedGroups; // Trigger reactivity
+									}}
+								>
+									<div class="flex items-center gap-2">
+										<span>{'mp' in group ? group.mp : group.name}</span>
+										<span class="text-sm text-gray-500">({(group.items || []).length})</span>
+									</div>
+									<svg
+										class="h-5 w-5 transform transition-transform"
+										class:rotate-180={!collapsedGroups.has('mp' in group ? group.mp : group.name)}
+										xmlns="http://www.w3.org/2000/svg"
+										viewBox="0 0 20 20"
+										fill="currentColor"
+									>
+										<path
+											fill-rule="evenodd"
+											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+											clip-rule="evenodd"
+										/>
+									</svg>
+								</button>
+								{#if !collapsedGroups.has('mp' in group ? group.mp : group.name)}
+									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+										{#each (group.items || []) as partition}
+											<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
+										{/each}
+									</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
