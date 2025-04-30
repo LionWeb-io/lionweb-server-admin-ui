@@ -34,10 +34,10 @@ export function getQualifiedName(nodes: LionWebJsonNode[], node: LionWebJsonNode
 
 	const name = getNodeName(node);
 	if (name == null) return undefined;
-	let names = [name];
+	const names = [name];
 	let curr = getParent(node);
 	while (curr != undefined) {
-		let currName = getNodeName(curr);
+		const currName = getNodeName(curr);
 		if (currName != null) {
 			names.push(currName);
 		}
