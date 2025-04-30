@@ -127,6 +127,80 @@ export async function createPartition(
 	return partition;
 }
 
+export async function createPartitions(
+	repositoryName: string,
+	chunks: LionWebJsonChunk[]
+): Promise<Partition[]> {
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	let partitions: Partition[] = [];
+
+	chunks.forEach(chunk => {
+	const rootNodes = chunk.nodes.filter((node) => node.parent === null);
+	if (rootNodes.length !== 1) {
+		throw new Error('Expected exactly one root node, got ' + rootNodes.length);
+	}
+		const partition: Partition = {
+			id: rootNodes[0].id
+		};
+		partitions.push(partition);
+	})
+
+	// const emptyContainments = rootNodes[0].containments.map((containment) => {
+	// 	return { containment: containment.containment, children: [] };
+	// });
+	//
+	// const rootifiedNode = {
+	// 	id: rootNodes[0].id,
+	// 	classifier: rootNodes[0].classifier,
+	// 	properties: rootNodes[0].properties,
+	// 	containments: emptyContainments,
+	// 	references: rootNodes[0].references,
+	// 	annotations: [],
+	// 	parent: null
+	// };
+	//
+	// const tmpChunk: LionWebJsonChunk = {
+	// 	serializationFormatVersion: chunk.serializationFormatVersion,
+	// 	languages: chunk.languages,
+	// 	nodes: [rootifiedNode]
+	// };
+	//
+	// const response = await client.bulk.createPartitions(tmpChunk);
+	//
+	// const responseData = response.body as LionwebResponse;
+	// console.log('Create partition response:', responseData);
+	//
+	// if (!responseData.success) {
+	// 	throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
+	// }
+	//
+	// // Extract the partition ID from the response messages
+	// const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
+	// if (!versionMessage) {
+	// 	throw new Error('No version information found in response');
+	// }
+	//
+	// Create a partition object with the available information
+
+
+
+	const bulkImport : BulkImport = {
+		nodes: [],
+		attachPoints: []
+	}
+	chunks.forEach(chunk => {
+		bulkImport.nodes.concat(chunk.nodes);
+	})
+	const storeResponse = await client.additional.bulkImport(bulkImport, "json", false);
+	if (!storeResponse.body.success) {
+		throw new Error(
+			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
+		);
+	}
+
+	return partitions;
+}
+
 export async function deletePartition(repositoryName: string, partitionId: string): Promise<void> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
 	const response = await client.bulk.deletePartitions([partitionId]);
@@ -234,34 +308,50 @@ export async function uploadRepositoryFromZip(
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 
-	for (let i = 0; i < files.length; i++) {
-		const zipFile = files[i];
-		progressCallback(i, total);
-
-		const content = await zipFile.async('string');
-		const partitionData: LionWebJsonChunk = JSON.parse(content);
-
-		const rootsInPartitionData = partitionData.nodes.filter((node: LionWebJsonNode) => node.parent == null);
-		if (rootsInPartitionData.length != 1) {
-			throw new Error("Not a valid partition. Roots found: " + rootsInPartitionData.length);
+	const BLOCK_SIZE = 20;
+	const toStore = [];
+	for (let i = 0; i < files.length; ) {
+		let endIndex = i + BLOCK_SIZE;
+		if (endIndex > files.length - 1) {
+			endIndex = files.length - 1;
 		}
+		console.log("bulk import", i, endIndex);
+		for (let j = i; j <= endIndex; j++) {
+			const zipFile = files[i];
+			// progressCallback(i, total);
 
-		const partitionID = rootsInPartitionData[0].id;
-		const partitionExists = existingPartitionsIDs.includes(partitionID)
-		let skip = false;
-		if (partitionExists) {
-			const action = await handleExistingPartition(partitionID);
-			if (action === 'skip') {
-				skip = true;
-			} else if (action === 'replace') {
-				await deletePartition(repositoryName, partitionData.nodes[0].id);
-			} else {
-				throw new Error("Unexpected situation")
+			const content = await zipFile.async('string');
+			const partitionData: LionWebJsonChunk = JSON.parse(content);
+
+			const rootsInPartitionData = partitionData.nodes.filter((node: LionWebJsonNode) => node.parent == null);
+			if (rootsInPartitionData.length != 1) {
+				throw new Error("Not a valid partition. Roots found: " + rootsInPartitionData.length);
 			}
+
+			const partitionID = rootsInPartitionData[0].id;
+			const partitionExists = existingPartitionsIDs.includes(partitionID)
+			let skip = false;
+			if (partitionExists) {
+				const action = await handleExistingPartition(partitionID);
+				if (action === 'skip') {
+					skip = true;
+				} else if (action === 'replace') {
+					await deletePartition(repositoryName, partitionData.nodes[0].id);
+				} else {
+					throw new Error("Unexpected situation")
+				}
+			}
+			if (!skip) {
+				toStore.push(partitionData);
+			}
+
 		}
-		if (!skip) {
-			await createPartition(repositoryName, partitionData);
+		console.log("toStore", toStore.length);
+		if (toStore.length > 0) {
+			await createPartitions(repositoryName, toStore);
 		}
+		progressCallback(endIndex, total);
+		i = endIndex + 1;
 	}
 
 	// Final progress update
