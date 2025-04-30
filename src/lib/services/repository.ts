@@ -6,9 +6,9 @@ import type {
 	ListRepositoriesResponse
 } from '@lionweb/repository-shared';
 import { RepositoryClient } from '@lionweb/repository-client';
-import type { LionWebJsonChunk } from '@lionweb/repository-client';
-import type { LionWebJsonNode } from '@lionweb/validation';
+import type { LionWebJsonChunk, LionWebJsonNode} from '@lionweb/repository-client';
 import { getNodeName } from '$lib/utils/noderendering';
+import type { BulkImport, TransferFormat } from '@lionweb/repository-additionalapi';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
@@ -68,57 +68,56 @@ export async function createPartition(
 ): Promise<Partition> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
 
-	console.log('Creating partition with data:', {
-		repositoryName,
-		chunk: JSON.stringify(chunk, null, 2)
-	});
-
 	const rootNodes = chunk.nodes.filter((node) => node.parent === null);
 	if (rootNodes.length !== 1) {
 		throw new Error('Expected exactly one root node, got ' + rootNodes.length);
 	}
 
-	const emptyContainments = rootNodes[0].containments.map((containment) => {
-		return { containment: containment.containment, children: [] };
-	});
-
-	const rootifiedNode = {
-		id: rootNodes[0].id,
-		classifier: rootNodes[0].classifier,
-		properties: rootNodes[0].properties,
-		containments: emptyContainments,
-		references: rootNodes[0].references,
-		annotations: [],
-		parent: null
-	};
-
-	const tmpChunk: LionWebJsonChunk = {
-		serializationFormatVersion: chunk.serializationFormatVersion,
-		languages: chunk.languages,
-		nodes: [rootifiedNode]
-	};
-
-	const response = await client.bulk.createPartitions(tmpChunk);
-
-	const responseData = response.body as LionwebResponse;
-	console.log('Create partition response:', responseData);
-
-	if (!responseData.success) {
-		throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
-	}
-
-	// Extract the partition ID from the response messages
-	const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
-	if (!versionMessage) {
-		throw new Error('No version information found in response');
-	}
-
+	// const emptyContainments = rootNodes[0].containments.map((containment) => {
+	// 	return { containment: containment.containment, children: [] };
+	// });
+	//
+	// const rootifiedNode = {
+	// 	id: rootNodes[0].id,
+	// 	classifier: rootNodes[0].classifier,
+	// 	properties: rootNodes[0].properties,
+	// 	containments: emptyContainments,
+	// 	references: rootNodes[0].references,
+	// 	annotations: [],
+	// 	parent: null
+	// };
+	//
+	// const tmpChunk: LionWebJsonChunk = {
+	// 	serializationFormatVersion: chunk.serializationFormatVersion,
+	// 	languages: chunk.languages,
+	// 	nodes: [rootifiedNode]
+	// };
+	//
+	// const response = await client.bulk.createPartitions(tmpChunk);
+	//
+	// const responseData = response.body as LionwebResponse;
+	// console.log('Create partition response:', responseData);
+	//
+	// if (!responseData.success) {
+	// 	throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
+	// }
+	//
+	// // Extract the partition ID from the response messages
+	// const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
+	// if (!versionMessage) {
+	// 	throw new Error('No version information found in response');
+	// }
+	//
 	// Create a partition object with the available information
 	const partition: Partition = {
-		id: rootifiedNode.id
+		id: rootNodes[0].id
 	};
 
-	const storeResponse = await client.bulk.store(chunk);
+	const bulkImport : BulkImport = {
+		nodes: chunk.nodes,
+		attachPoints: []
+	}
+	const storeResponse = await client.additional.bulkImport(bulkImport, "json", false);
 	if (!storeResponse.body.success) {
 		throw new Error(
 			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
