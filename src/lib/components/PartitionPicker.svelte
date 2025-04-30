@@ -7,6 +7,7 @@
 	let partitions: Array<{ id: string; name?: string }> = [];
 	let isOpen = false;
 	let selected: { id: string; name?: string } | null = null;
+	let searchQuery = '';
 
 	onMount(async () => {
 		try {
@@ -42,6 +43,17 @@
 		isOpen = false;
 		goto(`/repository/${$page.params.repository}/node-${partition.id}`);
 	}
+
+	$: filteredPartitions = partitions
+		.filter(p => {
+			const searchLower = searchQuery.toLowerCase();
+			return (p.name?.toLowerCase().includes(searchLower) || p.id.toLowerCase().includes(searchLower));
+		})
+		.sort((a, b) => {
+			const nameA = a.name || a.id;
+			const nameB = b.name || b.id;
+			return nameA.localeCompare(nameB);
+		});
 </script>
 
 <div class="custom-select">
@@ -57,8 +69,16 @@
 	</div>
 
 	{#if isOpen}
+		<div class="search-box">
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder="Search partitions..."
+				class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+			/>
+		</div>
 		<ul class="options">
-			{#each partitions as partition}
+			{#each filteredPartitions as partition}
 				<li class="option-row" on:click={() => selectOption(partition)}>
 					<span class="option-title">{partition.name || partition.id}</span>
 				</li>
@@ -102,9 +122,23 @@
         flex-shrink: 0;
     }
 
-    .options {
+    .search-box {
         position: absolute;
         top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        z-index: 1000;
+        padding: 0.5rem;
+        width: 100%;
+    }
+
+    .options {
+        position: absolute;
+        top: calc(100% + 4px + 3rem); /* Adjusted to account for search box height */
         left: 0;
         right: 0;
         background: white;
@@ -115,6 +149,8 @@
         padding: 0.5rem 0;
         min-width: max-content;
         width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
     }
 
     .options .option-row {
