@@ -1,14 +1,13 @@
 import type { Partition } from '$lib/types';
 import type {
-	LionwebResponse,
-	RepositoryConfiguration,
 	LionWebVersionType,
-	ListRepositoriesResponse
+	ListRepositoriesResponse,
+	RepositoryConfiguration
 } from '@lionweb/repository-shared';
-import { RepositoryClient } from '@lionweb/repository-client';
 import type { LionWebJsonChunk, LionWebJsonNode } from '@lionweb/repository-client';
+import { RepositoryClient, TransferFormat } from '@lionweb/repository-client';
 import { getNodeName } from '$lib/utils/noderendering';
-import type { BulkImport, TransferFormat } from '@lionweb/repository-additionalapi';
+import type { BulkImport } from '@lionweb/repository-additionalapi';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
@@ -66,7 +65,7 @@ export async function createPartition(
 	repositoryName: string,
 	chunk: LionWebJsonChunk
 ): Promise<Partition> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
 
 	const rootNodes = chunk.nodes.filter((node) => node.parent === null);
 	if (rootNodes.length !== 1) {
@@ -131,7 +130,7 @@ export async function createPartitions(
 	repositoryName: string,
 	chunks: LionWebJsonChunk[]
 ): Promise<void> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
 
 	const bulkImport: BulkImport = {
 		nodes: [],
@@ -144,9 +143,9 @@ export async function createPartitions(
 		}
 		bulkImport.nodes = bulkImport.nodes.concat(chunk.nodes);
 	}
-	console.log("createPartitions: bulk import nodes.length=", bulkImport.nodes.length);
-	const storeResponse = await client.additional.bulkImport(bulkImport, 'json', false);
-	console.log("createPartitions: bulk import completed", storeResponse);
+	console.log('createPartitions: bulk import nodes.length=', bulkImport.nodes.length);
+	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, false);
+	console.log('createPartitions: bulk import completed', storeResponse);
 	if (!storeResponse.body.success) {
 		throw new Error(
 			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
@@ -268,8 +267,8 @@ export async function uploadRepositoryFromZip(
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 
-	const BLOCK_SIZE = 250;
-	const toStore = [];
+	const BLOCK_SIZE = 500;
+	let toStore = [];
 	for (let i = 0; i < files.length; ) {
 		let endIndex = i + BLOCK_SIZE - 1;
 		if (endIndex > files.length - 1) {
@@ -307,11 +306,11 @@ export async function uploadRepositoryFromZip(
 			if (!skip) {
 				toStore.push(partitionData);
 			}
-
 		}
 		if (toStore.length > 0) {
 			console.log(`calling create partitions with toStore.length=${toStore.length}`);
 			await createPartitions(repositoryName, toStore);
+			toStore = [];
 		}
 		i = endIndex + 1;
 	}
