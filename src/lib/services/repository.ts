@@ -166,7 +166,7 @@ export async function loadPartition(
 	repositoryName: string,
 	partitionId: string
 ): Promise<LionWebJsonChunk> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
 	const response = await client.bulk.retrieve([partitionId]);
 
 	if (!response.body.success) {
@@ -182,7 +182,7 @@ export async function loadPartitionNames(
 	repositoryName: string,
 	partitionIds: string[]
 ): Promise<Map<string, string | undefined>> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
 	const response = await client.bulk.retrieve(partitionIds, 0);
 
 	if (!response.body.success) {
@@ -267,7 +267,7 @@ export async function uploadRepositoryFromZip(
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 
-	const BLOCK_SIZE = 500;
+	const BLOCK_SIZE = 100;
 	let toStore = [];
 	for (let i = 0; i < files.length; ) {
 		let endIndex = i + BLOCK_SIZE - 1;
