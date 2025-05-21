@@ -5,7 +5,7 @@
 		"bodyLimit": "500mb"
 	},
 	"startup": {
-		"createDatabase": "always",
+		"createDatabase": "if-not-exists",
 		"createRepositories": [
 			{
 				"name": "default",
