@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getRepositories, createRepository, deleteRepository, downloadRepositoryAsZip, uploadRepositoryFromZip, getPartitionsCount } from '$lib/services/repository';
-	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+	import type { RepositoryConfiguration } from '@lionweb/server-shared';
 	import CreateRepositoryModal from '$lib/components/modals/CreateRepositoryModal.svelte';
 	import DeleteConfirmationModal from '$lib/components/modals/DeleteConfirmationModal.svelte';
 	import DownloadProgressModal from '$lib/components/modals/DownloadProgressModal.svelte';
@@ -217,7 +217,7 @@
 		if (!files || files.length === 0) return;
 
 		const file = files[0];
-		if (file.type !== 'application/zip' && !file.name.endsWith('.zip')) {
+		if (file.type !== 'application/zip' && !file.name.endsWith('.zip')&& !file.name.endsWith('.sps')) {
 			error = 'Please drop a ZIP file to import partitions';
 			return;
 		}

@@ -4,9 +4,9 @@ import type {
 	RepositoryConfiguration,
 	LionWebVersionType,
 	ListRepositoriesResponse
-} from '@lionweb/repository-shared';
-import { RepositoryClient } from '@lionweb/repository-client';
-import type { LionWebJsonChunk } from '@lionweb/repository-client';
+} from '@lionweb/server-shared';
+import { RepositoryClient } from '@lionweb/server-client';
+import type { LionWebJsonChunk } from '@lionweb/server-client';
 import type { LionWebJsonNode } from '@lionweb/validation';
 import { getNodeName } from '$lib/utils/noderendering';
 

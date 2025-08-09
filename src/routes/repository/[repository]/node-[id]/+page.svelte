@@ -4,7 +4,7 @@
 	import { loadPartition } from '$lib/services/repository';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
-	import type { LionWebJsonChunk } from '@lionweb/repository-client';
+	import type { LionWebJsonChunk } from '@lionweb/server-client';
 	import NodeNavigation from '$lib/components/NodeNavigation.svelte';
 	import { tick } from 'svelte';
 

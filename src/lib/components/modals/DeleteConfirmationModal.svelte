@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+	import type { RepositoryConfiguration } from '@lionweb/server-shared';
 
 	export let show: boolean;
 	export let repository: RepositoryConfiguration | null;

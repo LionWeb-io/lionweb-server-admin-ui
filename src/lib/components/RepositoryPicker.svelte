@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+	import type { RepositoryConfiguration } from '@lionweb/server-shared';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { getRepositories } from '$lib/services/repository';

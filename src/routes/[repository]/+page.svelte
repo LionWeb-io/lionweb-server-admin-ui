@@ -12,8 +12,8 @@
 	} from '$lib/services/repository';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
-	import type { LionWebJsonChunk } from '@lionweb/repository-client';
-	import type { RepositoryConfiguration } from '@lionweb/repository-shared';
+	import type { LionWebJsonChunk } from '@lionweb/server-client';
+	import type { RepositoryConfiguration } from '@lionweb/server-shared';
 	import { goto } from '$app/navigation';
 
 	let repositoryName = $page.params.repository;

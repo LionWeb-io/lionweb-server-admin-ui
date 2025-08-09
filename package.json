@@ -42,8 +42,8 @@
 		"@fortawesome/free-solid-svg-icons": "^6.7.2",
 		"@fortawesome/svelte-fontawesome": "^0.2.3",
 		"@lionweb/core": "^0.6.12",
-		"@lionweb/repository-client": "file:scripts/repo-clone/packages/client/lionweb-repository-client-0.3.0.tgz",
-		"@lionweb/repository-shared": "file:scripts/repo-clone/packages/shared/lionweb-repository-shared-0.3.0.tgz",
+		"@lionweb/server-client": "file:scripts/repo-clone/packages/client/lionweb-server-client-0.3.0.tgz",
+		"@lionweb/server-shared": "file:scripts/repo-clone/packages/shared/lionweb-server-shared-0.3.0.tgz",
 		"@types/jszip": "^3.4.0",
 		"jszip": "^3.10.1",
 		"svelte-heros": "^7.0.2"
