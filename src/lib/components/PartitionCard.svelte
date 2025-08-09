@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { LionWebJsonChunk } from '@lionweb/repository-client';
+    import type { LionWebJsonChunk } from '@lionweb/server-client';
     import type { LionWebJsonMetaPointer } from '@lionweb/validation';
     import { page } from '$app/stores';
     import { loadPartition, deletePartition, createPartition } from '$lib/services/repository';

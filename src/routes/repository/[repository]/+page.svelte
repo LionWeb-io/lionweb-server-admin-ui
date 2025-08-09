@@ -6,7 +6,7 @@
 		loadShallowPartitions,
 		createPartition,
 	} from '$lib/services/repository';
-	import type { LionWebJsonChunk } from '@lionweb/repository-client';
+	import type { LionWebJsonChunk } from '@lionweb/server-client';
 	import { goto } from '$app/navigation';
 	import type { LionWebJsonMetaPointer } from '@lionweb/validation';
 	import PartitionCard from '$lib/components/PartitionCard.svelte';

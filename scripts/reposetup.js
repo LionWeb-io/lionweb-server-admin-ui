@@ -7,9 +7,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define paths and repository details
-const REPO_URL = 'https://github.com/LionWeb-io/lionweb-repository.git';
-const COMMIT_HASH = '7440d726689631f1482786b2a2e9e5b632e06558';
+// Define paths and server details
+const SERVER_URL = 'https://github.com/LionWeb-io/lionweb-server.git';
+const COMMIT_HASH = '64aeb0de69bbb39626e7f107ba26eb0061063c9c';
 const CLONE_DIR = path.resolve(__dirname, 'repo-clone');
 const MODULES = ['shared', 'client'];
 
@@ -30,8 +30,8 @@ function cleanUpRepoEntriesFromPackageLock() {
 
 	// npm 7+ uses "packages", npm 6 and below uses "dependencies"
 	const packagesToRemove = [
-		'node_modules/@lionweb/repository-client',
-		'node_modules/@lionweb/repository-shared'
+		'node_modules/@lionweb/server-client',
+		'node_modules/@lionweb/server-shared'
 	];
 
 	if (lock.packages) {
@@ -67,7 +67,7 @@ try {
 		execSync(`git init ${CLONE_DIR}`, { stdio: 'inherit' });
 
 		console.log('Adding remote origin...');
-		execSync(`git remote add origin ${REPO_URL}`, { cwd: CLONE_DIR, stdio: 'inherit' });
+		execSync(`git remote add origin ${SERVER_URL}`, { cwd: CLONE_DIR, stdio: 'inherit' });
 
 		console.log(`Fetching only commit ${COMMIT_HASH}...`);
 		execSync(`git fetch --depth 1 origin ${COMMIT_HASH}`, { cwd: CLONE_DIR, stdio: 'inherit' });

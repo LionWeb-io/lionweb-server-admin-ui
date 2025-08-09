@@ -1,11 +1,13 @@
 import type { Partition } from '$lib/types';
 import type {
+	LionwebResponse,
+	RepositoryConfiguration,
 	LionWebVersionType,
-	ListRepositoriesResponse,
-	RepositoryConfiguration
-} from '@lionweb/repository-shared';
-import type { LionWebJsonChunk, LionWebJsonNode } from '@lionweb/repository-client';
-import { RepositoryClient, TransferFormat } from '@lionweb/repository-client';
+	ListRepositoriesResponse
+} from '@lionweb/server-shared';
+import { RepositoryClient } from '@lionweb/server-client';
+import type { LionWebJsonChunk } from '@lionweb/server-client';
+import type { LionWebJsonNode } from '@lionweb/validation';
 import { getNodeName } from '$lib/utils/noderendering';
 import type { BulkImport } from '@lionweb/repository-additionalapi';
 
