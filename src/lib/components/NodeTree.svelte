@@ -49,7 +49,7 @@
 	function getChildNodes(id: string): LionWebJsonNode[] {
 		if (!chunk?.nodes) return [];
 		const children = chunk.nodes.filter((node) => node.parent === id);
-		return children;
+		return children.sort((a, b) => Number(!isAnnotation(a)) - Number(!isAnnotation(b)));
 	}
 
 	function getAnnotationsOn(id: string): string[] {
