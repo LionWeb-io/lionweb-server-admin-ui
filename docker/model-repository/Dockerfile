@@ -1,5 +1,5 @@
 FROM node
-ARG lionwebServerCommitId=64aeb0de69bbb39626e7f107ba26eb0061063c9c
+ARG lionwebServerCommitId=0fa3fb391b774edb528a476689b8fad046bf3e08
 RUN mkdir lionweb-server
 WORKDIR lionweb-server
 RUN git init
