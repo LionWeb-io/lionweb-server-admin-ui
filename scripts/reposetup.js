@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // Define paths and server details
 const SERVER_URL = 'https://github.com/LionWeb-io/lionweb-server.git';
-const COMMIT_HASH = 'e801377d8d6ef646d917431d596dbfac54320032';
+const COMMIT_HASH = 'ca6e7f61fbbe642a72a4eb92109115a8775de53f';
 const CLONE_DIR = path.resolve(__dirname, 'repo-clone');
 const MODULES = ['shared', 'client'];
 

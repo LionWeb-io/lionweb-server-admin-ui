@@ -1,14 +1,13 @@
-import type { Partition } from '$lib/types';
+import type {Partition} from '$lib/types';
 import type {
-	LionwebResponse,
-	RepositoryConfiguration,
-	LionWebVersionType,
-	ListRepositoriesResponse
+    BulkImport,
+    LionWebVersionType,
+    ListRepositoriesResponse,
+    RepositoryConfiguration
 } from '@lionweb/server-shared';
-import { RepositoryClient } from '@lionweb/server-client';
-import type { LionWebJsonNode, LionWebJsonChunk } from '@lionweb/json';
-import { getNodeName } from '$lib/utils/noderendering';
-import type { BulkImport } from '@lionweb/server-shared';
+import {RepositoryClient, TransferFormat} from '@lionweb/server-client';
+import type {LionWebJsonChunk, LionWebJsonNode} from '@lionweb/json';
+import {getNodeName} from '$lib/utils/noderendering';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
@@ -66,7 +65,8 @@ export async function createPartition(
 	repositoryName: string,
 	chunk: LionWebJsonChunk
 ): Promise<Partition> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 
 	const rootNodes = chunk.nodes.filter((node) => node.parent === null);
 	if (rootNodes.length !== 1) {
@@ -117,7 +117,7 @@ export async function createPartition(
 		nodes: chunk.nodes,
 		attachPoints: []
 	};
-	const storeResponse = await client.additional.bulkImport(bulkImport, 'json', false);
+	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, false);
 	if (!storeResponse.body.success) {
 		throw new Error(
 			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
@@ -131,7 +131,8 @@ export async function createPartitions(
 	repositoryName: string,
 	chunks: LionWebJsonChunk[]
 ): Promise<void> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 
 	const bulkImport: BulkImport = {
 		nodes: [],
@@ -145,7 +146,7 @@ export async function createPartitions(
 		bulkImport.nodes = bulkImport.nodes.concat(chunk.nodes);
 	}
 	console.log('createPartitions: bulk import nodes.length=', bulkImport.nodes.length);
-	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, false);
+	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, true);
 	console.log('createPartitions: bulk import completed', storeResponse);
 	if (!storeResponse.body.success) {
 		throw new Error(
@@ -167,7 +168,8 @@ export async function loadPartition(
 	repositoryName: string,
 	partitionId: string
 ): Promise<LionWebJsonChunk> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 	const response = await client.bulk.retrieve([partitionId]);
 
 	if (!response.body.success) {
@@ -183,7 +185,8 @@ export async function loadPartitionNames(
 	repositoryName: string,
 	partitionIds: string[]
 ): Promise<Map<string, string | undefined>> {
-	const client = new RepositoryClient(CLIENT_ID, repositoryName, 300_000);
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 	const response = await client.bulk.retrieve(partitionIds, 0);
 
 	if (!response.body.success) {

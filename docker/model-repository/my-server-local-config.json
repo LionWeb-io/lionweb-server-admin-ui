@@ -5,11 +5,11 @@
 		"bodyLimit": "500mb"
 	},
 	"startup": {
-		"createDatabase": "if-not-exists",
+		"createDatabase": "always",
 		"createRepositories": [
 			{
 				"name": "default",
-				"create": "if-not-exists",
+				"create": "always",
 				"history": false,
 				"lionWebVersion": "2023.1"
 			}
