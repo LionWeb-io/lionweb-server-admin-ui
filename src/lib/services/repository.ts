@@ -6,10 +6,9 @@ import type {
 	ListRepositoriesResponse
 } from '@lionweb/server-shared';
 import { RepositoryClient } from '@lionweb/server-client';
-import type { LionWebJsonChunk } from '@lionweb/server-client';
-import type { LionWebJsonNode } from '@lionweb/validation';
+import type { LionWebJsonNode, LionWebJsonChunk } from '@lionweb/json';
 import { getNodeName } from '$lib/utils/noderendering';
-import type { BulkImport } from '@lionweb/repository-additionalapi';
+import type { BulkImport } from '@lionweb/server-shared';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
