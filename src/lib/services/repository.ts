@@ -73,41 +73,6 @@ export async function createPartition(
 		throw new Error('Expected exactly one root node, got ' + rootNodes.length);
 	}
 
-	// const emptyContainments = rootNodes[0].containments.map((containment) => {
-	// 	return { containment: containment.containment, children: [] };
-	// });
-	//
-	// const rootifiedNode = {
-	// 	id: rootNodes[0].id,
-	// 	classifier: rootNodes[0].classifier,
-	// 	properties: rootNodes[0].properties,
-	// 	containments: emptyContainments,
-	// 	references: rootNodes[0].references,
-	// 	annotations: [],
-	// 	parent: null
-	// };
-	//
-	// const tmpChunk: LionWebJsonChunk = {
-	// 	serializationFormatVersion: chunk.serializationFormatVersion,
-	// 	languages: chunk.languages,
-	// 	nodes: [rootifiedNode]
-	// };
-	//
-	// const response = await client.bulk.createPartitions(tmpChunk);
-	//
-	// const responseData = response.body as LionwebResponse;
-	// console.log('Create partition response:', responseData);
-	//
-	// if (!responseData.success) {
-	// 	throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
-	// }
-	//
-	// // Extract the partition ID from the response messages
-	// const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
-	// if (!versionMessage) {
-	// 	throw new Error('No version information found in response');
-	// }
-	//
 	// Create a partition object with the available information
 	const partition: Partition = {
 		id: rootNodes[0].id
