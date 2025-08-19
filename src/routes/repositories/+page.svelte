@@ -28,13 +28,6 @@
 	let partitionCounts: { [key: string]: number | null } = {};
 	let loadingPartitionCounts: { [key: string]: boolean } = {};
 
-	// Form data for new repository
-	let newRepository: RepositoryConfiguration = {
-		name: '',
-		lionweb_version: '2024.1',
-		history: false
-	};
-
 	// Add drag counter to handle nested elements
 	let dragCounters: { [key: string]: number } = {};
 
@@ -69,7 +62,7 @@
 
 	async function loadPartitionCount(repositoryName: string) {
 		if (loadingPartitionCounts[repositoryName]) return;
-		
+
 		try {
 			loadingPartitionCounts[repositoryName] = true;
 			const count = await getPartitionsCount(repositoryName);
@@ -174,14 +167,14 @@
 	function handleDragEnter(e: DragEvent, repositoryName: string) {
 		e.preventDefault();
 		e.stopPropagation();
-		
+
 		// Initialize counter if needed
 		if (dragCounters[repositoryName] === undefined) {
 			dragCounters[repositoryName] = 0;
 		}
-		
+
 		dragCounters[repositoryName]++;
-		
+
 		// Only set active when first entering
 		if (dragCounters[repositoryName] === 1) {
 			dragActiveRepository = repositoryName;
@@ -191,10 +184,10 @@
 	function handleDragLeave(e: DragEvent, repositoryName: string) {
 		e.preventDefault();
 		e.stopPropagation();
-		
+
 		// Decrement counter
 		dragCounters[repositoryName]--;
-		
+
 		// Only remove active state when actually leaving the entire element
 		if (dragCounters[repositoryName] === 0) {
 			if (dragActiveRepository === repositoryName) {
@@ -230,12 +223,14 @@
 			uploadAction = null;
 			applyToAll = false;
 
+			console.time('loadPartitions');
 			await uploadRepositoryFromZip(
-				file, 
+				file,
 				repositoryName,
 				(current, total) => {
 					uploadProgress = { current, total };
 				},
+
 				async (partitionId) => {
 					if (uploadAction && applyToAll) {
 						return uploadAction;
@@ -248,6 +243,7 @@
 					});
 				}
 			);
+			console.timeEnd('loadPartitions');
 			await loadRepositories();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to import partitions';
@@ -263,12 +259,12 @@
 
 	function handleExistingPartitionAction(action: 'skip' | 'replace', applyAll: boolean) {
 		if (!existingPartitionResolver) return;
-		
+
 		if (applyAll) {
 			uploadAction = action;
 			applyToAll = true;
 		}
-		
+
 		existingPartitionResolver(action);
 		showExistingPartitionDialog = false;
 		existingPartitionResolver = null;
@@ -305,7 +301,7 @@
 			{:else}
 				<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{#each repositories as repository}
-						<div 
+						<div
 							class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow relative {dragActiveRepository === repository.name ? 'ring-2 ring-indigo-500' : ''}"
 							on:dragenter={(e) => handleDragEnter(e, repository.name)}
 							on:dragleave={(e) => handleDragLeave(e, repository.name)}

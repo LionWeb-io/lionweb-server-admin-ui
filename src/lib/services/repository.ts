@@ -1,14 +1,13 @@
-import type { Partition } from '$lib/types';
+import type {Partition} from '$lib/types';
 import type {
-	LionwebResponse,
-	RepositoryConfiguration,
-	LionWebVersionType,
-	ListRepositoriesResponse
+    BulkImport,
+    LionWebVersionType,
+    ListRepositoriesResponse,
+    RepositoryConfiguration
 } from '@lionweb/server-shared';
-import { RepositoryClient } from '@lionweb/server-client';
-import type { LionWebJsonChunk } from '@lionweb/server-client';
-import type { LionWebJsonNode } from '@lionweb/validation';
-import { getNodeName } from '$lib/utils/noderendering';
+import {RepositoryClient, TransferFormat} from '@lionweb/server-client';
+import type {LionWebJsonChunk, LionWebJsonNode} from '@lionweb/json';
+import {getNodeName} from '$lib/utils/noderendering';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
 
@@ -53,9 +52,9 @@ export async function deleteRepository(repositoryName: string): Promise<void> {
 
 export async function listPartitionsIDs(repositoryName: string): Promise<string[]> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
-	const response = await client.bulk.listPartitions()
+	const response = await client.bulk.listPartitions();
 	if (response.body.success) {
-		return response.body.chunk.nodes.map(node => node.id);
+		return response.body.chunk.nodes.map((node) => node.id);
 	} else {
 		console.error('Error listPartitions:', response.body.messages);
 		throw new Error(`Failed to listPartitions: ${response.body.messages}`);
@@ -67,58 +66,23 @@ export async function createPartition(
 	chunk: LionWebJsonChunk
 ): Promise<Partition> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
-
-	console.log('Creating partition with data:', {
-		repositoryName,
-		chunk: JSON.stringify(chunk, null, 2)
-	});
+    client.timeout = 300_000;
 
 	const rootNodes = chunk.nodes.filter((node) => node.parent === null);
 	if (rootNodes.length !== 1) {
 		throw new Error('Expected exactly one root node, got ' + rootNodes.length);
 	}
 
-	const emptyContainments = rootNodes[0].containments.map((containment) => {
-		return { containment: containment.containment, children: [] };
-	});
-
-	const rootifiedNode = {
-		id: rootNodes[0].id,
-		classifier: rootNodes[0].classifier,
-		properties: rootNodes[0].properties,
-		containments: emptyContainments,
-		references: rootNodes[0].references,
-		annotations: [],
-		parent: null
-	};
-
-	const tmpChunk: LionWebJsonChunk = {
-		serializationFormatVersion: chunk.serializationFormatVersion,
-		languages: chunk.languages,
-		nodes: [rootifiedNode]
-	};
-
-	const response = await client.bulk.createPartitions(tmpChunk);
-
-	const responseData = response.body as LionwebResponse;
-	console.log('Create partition response:', responseData);
-
-	if (!responseData.success) {
-		throw new Error(JSON.stringify(responseData.messages || 'Failed to create partition'));
-	}
-
-	// Extract the partition ID from the response messages
-	const versionMessage = responseData.messages?.find((msg) => msg.kind === 'RepoVersion');
-	if (!versionMessage) {
-		throw new Error('No version information found in response');
-	}
-
 	// Create a partition object with the available information
 	const partition: Partition = {
-		id: rootifiedNode.id
+		id: rootNodes[0].id
 	};
 
-	const storeResponse = await client.bulk.store(chunk);
+	const bulkImport: BulkImport = {
+		nodes: chunk.nodes,
+		attachPoints: []
+	};
+	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, false);
 	if (!storeResponse.body.success) {
 		throw new Error(
 			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
@@ -126,6 +90,34 @@ export async function createPartition(
 	}
 
 	return partition;
+}
+
+export async function createPartitions(
+	repositoryName: string,
+	chunks: LionWebJsonChunk[]
+): Promise<void> {
+	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
+
+	const bulkImport: BulkImport = {
+		nodes: [],
+		attachPoints: []
+	};
+	for (const chunk of chunks) {
+		const rootNodes = chunk.nodes.filter((node) => node.parent === null);
+		if (rootNodes.length !== 1) {
+			throw new Error('Expected exactly one root node, got ' + rootNodes.length);
+		}
+		bulkImport.nodes = bulkImport.nodes.concat(chunk.nodes);
+	}
+	console.log('createPartitions: bulk import nodes.length=', bulkImport.nodes.length);
+	const storeResponse = await client.additional.bulkImport(bulkImport, TransferFormat.JSON, true);
+	console.log('createPartitions: bulk import completed', storeResponse);
+	if (!storeResponse.body.success) {
+		throw new Error(
+			JSON.stringify(storeResponse.body.messages || 'Failed to store the partition data')
+		);
+	}
 }
 
 export async function deletePartition(repositoryName: string, partitionId: string): Promise<void> {
@@ -142,6 +134,7 @@ export async function loadPartition(
 	partitionId: string
 ): Promise<LionWebJsonChunk> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 	const response = await client.bulk.retrieve([partitionId]);
 
 	if (!response.body.success) {
@@ -158,10 +151,13 @@ export async function loadPartitionNames(
 	partitionIds: string[]
 ): Promise<Map<string, string | undefined>> {
 	const client = new RepositoryClient(CLIENT_ID, repositoryName);
+    client.timeout = 300_000;
 	const response = await client.bulk.retrieve(partitionIds, 0);
 
 	if (!response.body.success) {
-		throw new Error(JSON.stringify(response.body.messages || 'Failed to load partition shallow data'));
+		throw new Error(
+			JSON.stringify(response.body.messages || 'Failed to load partition shallow data')
+		);
 	}
 
 	const partitionNames = new Map<string, string | undefined>();
@@ -180,7 +176,9 @@ export async function loadShallowPartitions(
 	const response = await client.bulk.retrieve(partitionIds, 0);
 
 	if (!response.body.success) {
-		throw new Error(JSON.stringify(response.body.messages || 'Failed to load partition shallow data'));
+		throw new Error(
+			JSON.stringify(response.body.messages || 'Failed to load partition shallow data')
+		);
 	}
 
 	const partitionData = new Map<string, LionWebJsonNode>();
@@ -190,9 +188,10 @@ export async function loadShallowPartitions(
 	return partitionData;
 }
 
-export async function downloadRepositoryAsZip(repositoryName: string,
-	progressCallback: (current: number, total: number) => void): Promise<Blob> {
-
+export async function downloadRepositoryAsZip(
+	repositoryName: string,
+	progressCallback: (current: number, total: number) => void
+): Promise<Blob> {
 	// Get list of all partitions
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 	const totalPartitions = existingPartitionsIDs.length;
@@ -217,7 +216,7 @@ export async function downloadRepositoryAsZip(repositoryName: string,
 	progressCallback(totalPartitions, totalPartitions);
 
 	// Generate the zip file
-	return await zip.generateAsync({ type: "blob" });
+	return await zip.generateAsync({ type: 'blob' });
 }
 
 export async function uploadRepositoryFromZip(
@@ -230,39 +229,59 @@ export async function uploadRepositoryFromZip(
 	const zip = await JSZip.loadAsync(file);
 
 	// Process each file in the zip
-	const files = Object.values(zip.files).filter((zipFile): zipFile is import('jszip').JSZipObject => !zipFile.dir);
+	const files = Object.values(zip.files).filter(
+		(zipFile): zipFile is import('jszip').JSZipObject => !zipFile.dir
+	);
 	const total = files.length;
 
 	const existingPartitionsIDs = await listPartitionsIDs(repositoryName);
 
-	for (let i = 0; i < files.length; i++) {
-		const zipFile = files[i];
-		progressCallback(i, total);
-
-		const content = await zipFile.async('string');
-		const partitionData: LionWebJsonChunk = JSON.parse(content);
-
-		const rootsInPartitionData = partitionData.nodes.filter((node: LionWebJsonNode) => node.parent == null);
-		if (rootsInPartitionData.length != 1) {
-			throw new Error("Not a valid partition. Roots found: " + rootsInPartitionData.length);
+	const BLOCK_SIZE = 100;
+	let toStore = [];
+	for (let i = 0; i < files.length; ) {
+		let endIndex = i + BLOCK_SIZE - 1;
+		if (endIndex > files.length - 1) {
+			endIndex = files.length - 1;
 		}
+		console.log(`uploadRepositoryFromZip i=${i} endIndex=${endIndex} files.length=${files.length}`);
 
-		const partitionID = rootsInPartitionData[0].id;
-		const partitionExists = existingPartitionsIDs.includes(partitionID)
-		let skip = false;
-		if (partitionExists) {
-			const action = await handleExistingPartition(partitionID);
-			if (action === 'skip') {
-				skip = true;
-			} else if (action === 'replace') {
-				await deletePartition(repositoryName, partitionData.nodes[0].id);
-			} else {
-				throw new Error("Unexpected situation")
+		progressCallback(i, total);
+		for (let j = i; j <= endIndex; j++) {
+			const zipFile = files[j];
+
+			const content = await zipFile.async('string');
+			const partitionData: LionWebJsonChunk = JSON.parse(content);
+
+			const rootsInPartitionData = partitionData.nodes.filter(
+				(node: LionWebJsonNode) => node.parent == null
+			);
+			if (rootsInPartitionData.length != 1) {
+				throw new Error('Not a valid partition. Roots found: ' + rootsInPartitionData.length);
+			}
+
+			const partitionID = rootsInPartitionData[0].id;
+			const partitionExists = existingPartitionsIDs.includes(partitionID);
+			let skip = false;
+			if (partitionExists) {
+				const action = await handleExistingPartition(partitionID);
+				if (action === 'skip') {
+					skip = true;
+				} else if (action === 'replace') {
+					await deletePartition(repositoryName, partitionData.nodes[0].id);
+				} else {
+					throw new Error('Unexpected situation');
+				}
+			}
+			if (!skip) {
+				toStore.push(partitionData);
 			}
 		}
-		if (!skip) {
-			await createPartition(repositoryName, partitionData);
+		if (toStore.length > 0) {
+			console.log(`calling create partitions with toStore.length=${toStore.length}`);
+			await createPartitions(repositoryName, toStore);
+			toStore = [];
 		}
+		i = endIndex + 1;
 	}
 
 	// Final progress update
@@ -276,6 +295,8 @@ export async function getPartitionsCount(repositoryName: string): Promise<number
 		return partitionsIDs.length;
 	} catch (e) {
 		console.error('Error getting partitions count:', e);
-		throw new Error(`Failed to get partitions count: ${e instanceof Error ? e.message : 'Unknown error'}`);
+		throw new Error(
+			`Failed to get partitions count: ${e instanceof Error ? e.message : 'Unknown error'}`
+		);
 	}
 }

@@ -28,7 +28,7 @@
 			loading = true;
 			error = null;
 			console.log('Loading partition', repositoryName, nodeId);
-			partitionData = await loadPartition(repositoryName, nodeId);
+			partitionData = await loadPartition(repositoryName!!, nodeId!!);
 			console.log('Got partition data', partitionData);
 
 		} catch (e) {
@@ -104,7 +104,6 @@
 				chunk={partitionData}
 				onNodeSelect={handleNodeSelect}
 				selectedNodeId={selectedNodeId}
-				bind:expandedNodes
 			/>
 		{:else}
 			<p>Loading...</p>

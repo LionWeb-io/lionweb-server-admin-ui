@@ -7,6 +7,7 @@ services:
       POSTGRES_PASSWORD: lionweb
     ports:
       - '5432:5432'
+    shm_size: '1g'  # Add this line to increase shared memory size
 
   model-repository:
     build: docker/model-repository

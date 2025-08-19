@@ -5,11 +5,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: install node v20
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      # Use the maintained v4 action and a current Node LTS
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'          # keep this in sync with local dev
+          cache: 'npm'                # speeds up, safe for optional deps
+      # Pin npm to a modern major (fixes optional-deps glitches seen in npm 9.x)
+      - name: Upgrade npm
+        run: npm i -g npm@^10
       - name: Setup
         run: npm run setup
       - name: Install
