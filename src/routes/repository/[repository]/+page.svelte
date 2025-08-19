@@ -8,7 +8,7 @@
 	} from '$lib/services/repository';
 	import type { LionWebJsonChunk } from '@lionweb/server-client';
 	import { goto } from '$app/navigation';
-	import type { LionWebJsonMetaPointer } from '@lionweb/validation';
+	import type { LionWebJsonMetaPointer } from '@lionweb/json';
 	import PartitionCard from '$lib/components/PartitionCard.svelte';
 	import { getNodeName } from '$lib/utils/noderendering';
 
@@ -182,7 +182,7 @@
 			loading = true;
 			error = null;
 
-			await createPartition(repositoryName, originalChunk);
+			await createPartition(repositoryName!!, originalChunk);
 			await loadPartitions();
 
 			// Show success message

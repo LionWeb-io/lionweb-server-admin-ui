@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LionWebJsonNode } from '@lionweb/validation';
+	import type { LionWebJsonNode } from '@lionweb/json';
 
 	export let node: LionWebJsonNode;
 	export let handleNodeClick: (id: string) => void;

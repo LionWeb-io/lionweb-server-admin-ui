@@ -1,7 +1,7 @@
 <!-- NodeNavigation.svelte -->
 <script lang="ts">
 	import { writable } from 'svelte/store';
-	import type { LionWebJsonChunk, LionWebJsonNode } from '@lionweb/validation';
+	import type { LionWebJsonChunk, LionWebJsonNode } from '@lionweb/json';
 	import { getQualifiedNodeRepresentation, splitQualifiedName } from '$lib/utils/noderendering';
 
 	export let chunk: LionWebJsonChunk;

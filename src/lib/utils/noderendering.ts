@@ -3,7 +3,7 @@ import type {
 	LionWebJsonReference,
 	LionWebJsonProperty,
 	LionWebJsonNode
-} from '@lionweb/validation';
+} from '@lionweb/json';
 
 export function getPropertyValue(property: LionWebJsonProperty): string | null {
 	return property?.value;
@@ -21,7 +21,7 @@ export function renderPropertyValue(property: LionWebJsonProperty): string {
 
 export function getNodeName(node: LionWebJsonNode) : string | undefined {
 	const nameProperty = node.properties.find(p => p.property.key === 'LionCore-builtins-INamed-name');
-	return nameProperty?.value;
+	return nameProperty?.value || undefined;
 }
 
 export function getQualifiedName(nodes: LionWebJsonNode[], node: LionWebJsonNode) : string | undefined {

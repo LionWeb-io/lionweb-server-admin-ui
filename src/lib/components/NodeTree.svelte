@@ -9,8 +9,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
 	import NodeDetails from '$lib/components/NodeDetails.svelte';
-	import type { LionWebJsonNode } from '@lionweb/validation/src/json/LionWebJson';
-	import type { LionWebJsonChunk } from '@lionweb/validation';
+	import type { LionWebJsonNode, LionWebJsonChunk } from '@lionweb/json';
 
 	export let chunk: LionWebJsonChunk;
 	export let expandedNodes: Set<string> = new Set();

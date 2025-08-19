@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { LionWebJsonChunk } from '@lionweb/server-client';
-    import type { LionWebJsonMetaPointer } from '@lionweb/validation';
+    import type { LionWebJsonMetaPointer } from '@lionweb/json';
     import { page } from '$app/stores';
     import { loadPartition, deletePartition, createPartition } from '$lib/services/repository';
     import { createEventDispatcher } from 'svelte';
@@ -30,7 +30,7 @@
             loading = true;
             error = null;
 
-            const partitionData = await loadPartition($page.params.repository, partition.id);
+            const partitionData = await loadPartition($page.params.repository!!, partition.id);
             const blob = new Blob([JSON.stringify(partitionData, null, 2)], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -53,7 +53,7 @@
             loading = true;
             error = null;
 
-            await deletePartition($page.params.repository, partition.id);
+            await deletePartition($page.params.repository!!, partition.id);
             showDeleteConfirm = false;
             dispatch('deleted');
         } catch (e) {
@@ -81,7 +81,7 @@
                 if (file.name.endsWith('.json')) {
                     const content = await file.text();
                     const partitionData: LionWebJsonChunk = JSON.parse(content);
-                    await createPartition($page.params.repository, partitionData);
+                    await createPartition($page.params.repository!!, partitionData);
                 }
             }
 
