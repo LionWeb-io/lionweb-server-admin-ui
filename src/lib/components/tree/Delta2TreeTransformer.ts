@@ -10,12 +10,12 @@ import type {
     ChildAddedEvent,
     ChildDeletedEvent,
     ChildReplacedEvent,
-    ChildMovedFromOtherContainmentEvent,
+    ChildMovedFromContainmentInOtherParentEvent,
     ChildMovedFromOtherContainmentInSameParentEvent,
-    ChildMovedInSameContainmentEvent,
-    ChildMovedAndReplacedFromOtherContainmentEvent,
+    ChildMovedInSameContainmentInSameParentEvent,
+    ChildMovedAndReplacedFromContainmentInOtherParentEvent,
     ChildMovedAndReplacedFromOtherContainmentInSameParentEvent,
-    ChildMovedAndReplacedInSameContainmentEvent,
+    ChildMovedAndReplacedInSameContainmentInSameParentEvent,
     AnnotationAddedEvent,
     AnnotationDeletedEvent,
     AnnotationReplacedEvent,
@@ -117,8 +117,8 @@ function eventSpecificChildren(ev: MessageFromClient | MessageToClient): TreeNod
             ];
         }
 
-        case "ChildMovedFromOtherContainment": {
-            const e = ev as ChildMovedFromOtherContainmentEvent;
+        case "ChildMovedFromContainmentInOtherParent": {
+            const e = ev as ChildMovedFromContainmentInOtherParentEvent;
             return [
                 nodeWithAbout("oldParent", e.oldParent),
                 valueNode("oldContainment", e.oldContainment),
@@ -142,19 +142,19 @@ function eventSpecificChildren(ev: MessageFromClient | MessageToClient): TreeNod
             ];
         }
 
-        case "ChildMovedInSameContainment": {
-            const e = ev as ChildMovedInSameContainmentEvent;
+        case "ChildMovedInSameContainmentInSameParent": {
+            const e = ev as ChildMovedInSameContainmentInSameParentEvent;
             return [
                 nodeWithAbout("parent", e.parent),
                 valueNode("containment", e.containment),
                 leaf("oldIndex", e.oldIndex),
-                leaf("newIndex", e.newIndex),
+                leaf("offset", e.indexOffset),
                 leaf("movedChild", e.movedChild)
             ];
         }
 
-        case "ChildMovedAndReplacedFromOtherContainment": {
-            const e = ev as ChildMovedAndReplacedFromOtherContainmentEvent;
+        case "ChildMovedAndReplacedFromContainmentInOtherParent": {
+            const e = ev as ChildMovedAndReplacedFromContainmentInOtherParentEvent;
             return [
                 nodeWithAbout("oldParent", e.oldParent),
                 leaf("oldContainment", e.oldContainment),
@@ -182,8 +182,8 @@ function eventSpecificChildren(ev: MessageFromClient | MessageToClient): TreeNod
             ];
         }
 
-        case "ChildMovedAndReplacedInSameContainment": {
-            const e = ev as ChildMovedAndReplacedInSameContainmentEvent;
+        case "ChildMovedAndReplacedInSameContainmentInSameParent": {
+            const e = ev as ChildMovedAndReplacedInSameContainmentInSameParentEvent;
             return [
                 nodeWithAbout("parent", e.parent),
                 valueNode("containment", e.containment),
@@ -234,7 +234,7 @@ function eventSpecificChildren(ev: MessageFromClient | MessageToClient): TreeNod
 
         case "AnnotationMovedInSameParent": {
             const e = ev as AnnotationMovedInSameParentEvent;
-            return [nodeWithAbout("parent", e.parent), leaf("oldIndex", e.oldIndex), leaf("newIndex", e.newIndex), leaf("movedAnnotation", e.movedAnnotation)];
+            return [nodeWithAbout("parent", e.parent), leaf("oldIndex", e.oldIndex), leaf("indexOffset", e.indexOffset), leaf("movedAnnotation", e.movedAnnotation)];
         }
 
         case "AnnotationMovedAndReplacedFromOtherParent": {
@@ -306,11 +306,9 @@ function eventSpecificChildren(ev: MessageFromClient | MessageToClient): TreeNod
                 )
             ];
         }
-
-        case "NoOp": {
+        case "NoOpEvent": {
             return [leaf("info", "No operation")];
         }
-
         case "ErrorEvent": {
             const e = ev as ErrorEvent;
             return [leaf("errorCode", e.errorCode), leaf("message", e.message)];

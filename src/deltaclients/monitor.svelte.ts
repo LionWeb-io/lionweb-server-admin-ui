@@ -112,25 +112,26 @@ export class Monitor {
         this.monitorClient.customFunction = (msg: object) => {
             console.log(`Monitor received '${JSON.stringify(msg)}`);
             if (isMonitorMessage(msg as unknown as { messageKind: string })) {
-                console.error(`Monitor received '${JSON.stringify(msg)}`);
-                const clientId = msg.clientId;
-                const repository = msg.repositoryName;
-                const delta = msg.delta;
+                const message = (msg as unknown as { messageKind: string }) as MonitorMessage
+                // console.error(`Monitor received '${JSON.stringify(message)}`);
+                const clientId = message.clientId;
+                const repository = message.repositoryName;
+                const delta = message.delta;
                 if (clientId === undefined) {
                     console.error(`Monitor message with undefined client`);
                     return;
                 }
                 let client = this.activeClients.get(clientId);
                 if (client === undefined) {
-                    console.log(`Monitor: NEW CLIENT  ${clientId}`);
-                    client = new Client(clientId, msg.participationId, repository);
+                    // console.log(`Monitor: NEW CLIENT  ${clientId}`);
+                    client = new Client(clientId, message.participationId, repository);
                     this.activeClients.set(clientId, client);
                     clients.push(client);
                 }
                 client.messages.push(delta);
-                this.allMessages.push(msg);
+                this.allMessages.push(message);
             } else {
-                console.error(`Monitor received '${JSON.stringify(msg)}`);
+                // console.error(`Monitor received '${JSON.stringify(msg)}`);
                 // ignore non monitor messages
             }
         };
@@ -199,6 +200,8 @@ export class Monitor {
                     }
                 }
                 this.messageToRow.set(mmId(msg), nextRow);
+            } else if (msg.delta.messageKind.startsWith("Custom_Monitor")){
+                // a Custom_Monitor event
             } else {
                 console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`);
             }

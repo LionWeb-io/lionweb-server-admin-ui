@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Self  from "$lib/components/NodeTree.svelte"
 	import type { NodeTreeProps } from '$lib/components/ComponentPropsTypes.js';
-	import type {	SerializedContainment, MetaPointer } from '@lionweb/core';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
 	import NodeDetails from '$lib/components/NodeDetails.svelte';
-	import type { LionWebJsonNode } from '@lionweb/json';
+	import type { LionWebJsonMetaPointer, LionWebJsonNode } from '@lionweb/json';
+	import type { LionWebJsonContainment } from '@lionweb/server-delta-shared';
 
 	let {
 		chunk,
@@ -22,13 +22,13 @@
 		.map((container: LionWebJsonNode) => container.annotations)
 		.flat());
 
-	function getRole(nodeId: string): MetaPointer | undefined {
-		return allContainments.find((containment: SerializedContainment) =>
+	function getRole(nodeId: string): LionWebJsonMetaPointer | undefined {
+		return allContainments.find((containment: LionWebJsonContainment) =>
 			containment.children.includes(nodeId)
 		)?.containment;
 	}
 
-	let allRoles = new Map<string, MetaPointer | undefined>();
+	let allRoles = new Map<string, LionWebJsonMetaPointer | undefined>();
 	chunk.nodes.forEach((node: LionWebJsonNode) => {
 		allRoles.set(node.id, getRole(node.id));
 	});
