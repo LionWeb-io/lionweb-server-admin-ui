@@ -10,11 +10,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'          # keep this in sync with local dev
+          node-version: '24'          # keep this in sync with local dev
           cache: 'npm'                # speeds up, safe for optional deps
       # Pin npm to a modern major (fixes optional-deps glitches seen in npm 9.x)
       - name: Upgrade npm
-        run: npm i -g npm@^10
+        run: npm i -g npm@^11
       - name: Setup
         run: npm run setup
       - name: Install
