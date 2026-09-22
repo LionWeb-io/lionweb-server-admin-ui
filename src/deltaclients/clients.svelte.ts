@@ -1,15 +1,6 @@
-import {
-    isDeltaCommand,
-    isDeltaEvent,
-    isDeltaRequest,
-    isDeltaResponse,
-    type MessageFromClient,
-    type MessageToClient
-} from "@lionweb/server-delta-shared";
+import { isDeltaCommand, isDeltaEvent, isDeltaRequest, isDeltaResponse, type MessageFromClient, type MessageToClient } from "@lionweb/server-delta-shared";
 
-export class a {
-    
-}
+export class a {}
 
 export class Client {
     id: string;
@@ -19,7 +10,7 @@ export class Client {
 
     constructor(id: string, participation: string, repo: string) {
         this.id = id;
-        this.participation = participation
+        this.participation = participation;
         this.repository = repo;
     }
 

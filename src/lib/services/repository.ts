@@ -10,8 +10,8 @@ import type {LionWebJsonChunk, LionWebJsonNode} from '@lionweb/json';
 import {getNodeName} from '$lib/utils/noderendering.js';
 
 const CLIENT_ID = 'lionWebRepoAdminUI';
-const hostname  = 'localhost'
-const 	port = '3005'
+// const hostname  = 'localhost'
+// const 	port = '3005'
 
 export async function getRepositories(): Promise<ListRepositoriesResponse> {
 	const client = new RepositoryClient({clientId: CLIENT_ID, hostname: "localhost", port: "3005", repository: "default"});

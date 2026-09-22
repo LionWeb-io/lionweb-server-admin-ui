@@ -1,7 +1,12 @@
 import { DeltaClient } from "@lionweb/server-delta-client";
 import {
-    type Custom_MonitorStartMonitor, type DeltaEvent, isDeltaAdminRequest, isDeltaAdminResponse, isDeltaCommand, isDeltaEvent,
-    isDeltaRequest, isDeltaResponse,
+    type Custom_MonitorStartMonitor,
+    isDeltaAdminRequest,
+    isDeltaAdminResponse,
+    isDeltaCommand,
+    isDeltaEvent,
+    isDeltaRequest,
+    isDeltaResponse,
     type MessageFromClient,
     type MessageToClient,
     type SignOnRequest
@@ -10,32 +15,32 @@ import { SvelteMap } from "svelte/reactivity";
 import { Client, clients } from "./clients.svelte.js";
 
 export type MonitorMessage = {
-    messageKind: "Monitor"
-    clientId: string
-    participationId: string
-    repositoryName: string
-    delta: MessageToClient | MessageFromClient
-}
+    messageKind: "Monitor";
+    clientId: string;
+    participationId: string;
+    repositoryName: string;
+    delta: MessageToClient | MessageFromClient;
+};
 
 export function mmId(m: MonitorMessage): string {
-        if (isDeltaResponse(m.delta)) {
-            return m.clientId + m.delta.queryId + m.delta.messageKind;
-        } else if (isDeltaEvent(m.delta)) {
-            return m.clientId + m.delta.messageKind + m.delta.originCommands.map((or) => or.commandId).join(",");
-        } else if (isDeltaCommand(m.delta)) {
-            return m.clientId + m.delta.commandId + m.delta.messageKind;
-        } else if (isDeltaRequest(m.delta)) {
-            return m.clientId + m.delta.queryId + m.delta.messageKind;
-        } else {
-            return "???" + m.delta.messageKind;
-        }
+    if (isDeltaResponse(m.delta)) {
+        return m.clientId + m.delta.queryId + m.delta.messageKind;
+    } else if (isDeltaEvent(m.delta)) {
+        return m.clientId + m.delta.messageKind + m.delta.originCommands.map((or) => or.commandId).join(",");
+    } else if (isDeltaCommand(m.delta)) {
+        return m.clientId + m.delta.commandId + m.delta.messageKind;
+    } else if (isDeltaRequest(m.delta)) {
+        return m.clientId + m.delta.queryId + m.delta.messageKind;
+    } else {
+        return "???" + m.delta.messageKind;
     }
+}
 
 export function isFromClient(delta: MessageToClient | MessageFromClient): delta is MessageFromClient {
-    return isDeltaCommand(delta) || isDeltaRequest(delta) || isDeltaAdminRequest(delta)
+    return isDeltaCommand(delta) || isDeltaRequest(delta) || isDeltaAdminRequest(delta);
 }
 export function isToClient(delta: MessageToClient | MessageFromClient): delta is MessageToClient {
-    return isDeltaEvent(delta) || isDeltaResponse(delta) || isDeltaAdminResponse(delta)
+    return isDeltaEvent(delta) || isDeltaResponse(delta) || isDeltaAdminResponse(delta);
 }
 
 /**
@@ -45,23 +50,22 @@ export function isToClient(delta: MessageToClient | MessageFromClient): delta is
  */
 export function causes(src: MonitorMessage, target: MonitorMessage): boolean {
     if (isDeltaCommand(src.delta) && isDeltaEvent(target.delta)) {
-        const srcDelta = src.delta
-        return target.delta.originCommands.find(origin => {
-            return origin.commandId === srcDelta.commandId &&
-            origin.participationId === src.participationId
+        const srcDelta = src.delta;
+        return (
+            target.delta.originCommands.find((origin) => {
+                return origin.commandId === srcDelta.commandId && origin.participationId === src.participationId;
             }) != undefined
-    } else if(isDeltaRequest(src.delta) && isDeltaResponse(target.delta)) {
-        const srcDelta = src.delta
-        const tgtDelta = target.delta
-        return tgtDelta.queryId === srcDelta.queryId &&
-            src.participationId === target.participationId
-    } else if(isDeltaAdminRequest(src.delta) && isDeltaAdminResponse(target.delta)) {
-        const srcDelta = src.delta
-        const tgtDelta = target.delta
-        return tgtDelta.queryId === srcDelta.queryId &&
-            src.participationId === target.participationId
+        );
+    } else if (isDeltaRequest(src.delta) && isDeltaResponse(target.delta)) {
+        const srcDelta = src.delta;
+        const tgtDelta = target.delta;
+        return tgtDelta.queryId === srcDelta.queryId && src.participationId === target.participationId;
+    } else if (isDeltaAdminRequest(src.delta) && isDeltaAdminResponse(target.delta)) {
+        const srcDelta = src.delta;
+        const tgtDelta = target.delta;
+        return tgtDelta.queryId === srcDelta.queryId && src.participationId === target.participationId;
     }
-    return false
+    return false;
 }
 
 export function getDeltaId(message: MessageFromClient | MessageToClient): string {
@@ -78,10 +82,9 @@ export function getDeltaId(message: MessageFromClient | MessageToClient): string
     }
 }
 
-function isMonitorMessage(object: object): object is MonitorMessage {
-    return (object as any)["messageKind"] === "Monitor"
+function isMonitorMessage(object: { messageKind: string }): object is MonitorMessage {
+    return object?.messageKind === "Monitor";
 }
-
 
 export class Monitor {
     monitorClient: DeltaClient;
@@ -107,14 +110,14 @@ export class Monitor {
         this.monitorClient.loggingOn = false;
         this.monitorClient.customFunctionOnly = true;
         this.monitorClient.customFunction = (msg: object) => {
-            console.log(`Monitor received '${JSON.stringify(msg)}`)
-            if (isMonitorMessage(msg)) {
+            console.log(`Monitor received '${JSON.stringify(msg)}`);
+            if (isMonitorMessage(msg as unknown as { messageKind: string })) {
                 console.error(`Monitor received '${JSON.stringify(msg)}`);
                 const clientId = msg.clientId;
                 const repository = msg.repositoryName;
                 const delta = msg.delta;
                 if (clientId === undefined) {
-                    console.error(`Monitor message with undefined client`)
+                    console.error(`Monitor message with undefined client`);
                     return;
                 }
                 let client = this.activeClients.get(clientId);
@@ -151,25 +154,28 @@ export class Monitor {
         });
     }
 
-    getClients(filter: (client: Client) => boolean = (client: Client) =>{ return false}): Client[] {
-        return this.activeClients.entries().map(e => e[1]).toArray();
+    getClients(): Client[] {
+        return this.activeClients
+            .entries()
+            .map((e) => e[1])
+            .toArray();
     }
 
-    getMessages(filter: (msg: MonitorMessage) => boolean = (msg: MonitorMessage) =>{ return true}): MonitorMessage[] {
-        filter = (msg: MonitorMessage): boolean => {
-            return msg.delta.messageKind !== "SignOnResponse"// && msg.clientId !== "client3"
-        }
-        const result = this.allMessages.filter(msg => filter(msg) === true)
-        let nextClientColumn = 1
-        let nextRow = 2
-        let clientsProcessed: Map<string, Client> = new Map<string, Client>()
-        let previousMessage: MonitorMessage | undefined = undefined
-        result.forEach(msg => {
-            const clientId = msg.clientId
-            const repository = msg.repositoryName
-            const delta = msg.delta
-            let client = this.activeClients.get(clientId);
-            let showingClient = clientsProcessed.get(clientId);
+    getMessages(): MonitorMessage[] {
+        const filter = (msg: MonitorMessage): boolean => {
+            return msg.delta.messageKind !== "SignOnResponse"; // && msg.clientId !== "client3"
+        };
+        const result = this.allMessages.filter((msg) => filter(msg) === true);
+        let nextClientColumn = 1;
+        let nextRow = 2;
+        const clientsProcessed: Map<string, Client> = new Map<string, Client>();
+        let previousMessage: MonitorMessage | undefined = undefined;
+        result.forEach((msg) => {
+            const clientId = msg.clientId;
+            // const repository = msg.repositoryName
+            // const delta = msg.delta
+            const client = this.activeClients.get(clientId);
+            const showingClient = clientsProcessed.get(clientId);
             if (showingClient === undefined) {
                 clientsProcessed.set(clientId, client!);
                 this.clientToColum.set(clientId, nextClientColumn++);
@@ -180,24 +186,24 @@ export class Monitor {
             } else if (isToClient(msg.delta)) {
                 console.log(`isfromServer is ${msg.delta.messageKind}`);
                 const previousMessageKind = previousMessage?.delta?.messageKind;
-                if (previousMessageKind === undefined || (previousMessageKind !== msg.delta.messageKind)) {
+                if (previousMessageKind === undefined || previousMessageKind !== msg.delta.messageKind) {
                     console.log(
                         `++ last is '${previousMessageKind}' new is '${msg.delta.messageKind}' => ${previousMessageKind === undefined || previousMessageKind !== msg.delta.messageKind}`
                     );
                     nextRow++;
                 } else {
                     if (previousMessage !== undefined && getDeltaId(previousMessage?.delta) !== getDeltaId(msg.delta)) {
-                        nextRow++
+                        nextRow++;
                     } else {
-                        nextRow++
+                        nextRow++;
                     }
                 }
                 this.messageToRow.set(mmId(msg), nextRow);
             } else {
-                console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`)
+                console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`);
             }
-            previousMessage = msg
-        })
-        return result
+            previousMessage = msg;
+        });
+        return result;
     }
 }
