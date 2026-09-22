@@ -1,21 +1,20 @@
-<!-- NodeTree.svelte -->
 <script lang="ts">
-	import type {
-		SerializationChunk,
-		SerializedNode,
-		SerializedContainment,
-		MetaPointer
-	} from '@lionweb/core';
-	import { createEventDispatcher } from 'svelte';
+	import Self  from "$lib/components/NodeTree.svelte"
+	import type { NodeTreeProps } from '$lib/components/ComponentPropsTypes.js';
 	import MetaPointerUI from '$lib/components/MetaPointerUI.svelte';
 	import NodeDetails from '$lib/components/NodeDetails.svelte';
-	import type { LionWebJsonNode, LionWebJsonChunk } from '@lionweb/json';
+	import type { LionWebJsonMetaPointer, LionWebJsonNode } from '@lionweb/json';
+	import type { LionWebJsonContainment } from '@lionweb/server-delta-shared';
 
-	export let chunk: LionWebJsonChunk;
-	export let expandedNodes: Set<string> = new Set();
-	export let level: number = 0;
-	export let nodeId: string | null = null;
-	export let selectedNodeId: string | null = null;
+	let {
+		chunk,
+		expandedNodes,
+		level = 0,
+		nodeId = null,
+		selectedNodeId = null,
+		nodeClick = (id: string) => {}
+	}: NodeTreeProps = $props()
+	
 	let allContainments = chunk.nodes
 		.map((container: LionWebJsonNode) => container.containments)
 		.flat();
@@ -23,15 +22,13 @@
 		.map((container: LionWebJsonNode) => container.annotations)
 		.flat());
 
-	const dispatch = createEventDispatcher();
-
-	function getRole(nodeId: string): MetaPointer | undefined {
-		return allContainments.find((containment: SerializedContainment) =>
+	function getRole(nodeId: string): LionWebJsonMetaPointer | undefined {
+		return allContainments.find((containment: LionWebJsonContainment) =>
 			containment.children.includes(nodeId)
 		)?.containment;
 	}
 
-	let allRoles = new Map<string, MetaPointer | undefined>();
+	let allRoles = new Map<string, LionWebJsonMetaPointer | undefined>();
 	chunk.nodes.forEach((node: LionWebJsonNode) => {
 		allRoles.set(node.id, getRole(node.id));
 	});
@@ -42,7 +39,6 @@
 		} else {
 			expandedNodes.add(id);
 		}
-		expandedNodes = expandedNodes; // Trigger reactivity
 	}
 
 	function getChildNodes(id: string): LionWebJsonNode[] {
@@ -78,7 +74,7 @@
 	}
 
 	function handleNodeClick(id: string) {
-		dispatch('nodeClick', { nodeId: id });
+		nodeClick(id)
 	}
 
 	function isFirstNodeInContainment(node: LionWebJsonNode): boolean {
@@ -116,14 +112,15 @@
 		return siblingAnnotations?.at(0) === node.id;
 	}
 
-	$: nodes =
+	let nodes: LionWebJsonNode[] = $derived(
 		nodeId === null
 			? chunk?.nodes?.filter((node) => !node.parent) || [] // Root nodes
-			: getChildNodes(nodeId);
+			: getChildNodes(nodeId)
+	);
 </script>
 
 <div class="space-y-2 overflow-y-auto">
-	{#each nodes as node:LionWebJsonNode}
+	{#each nodes as node}
 		<div
 			class="rounded p-2 {selectedNodeId === node.id ? 'highlight-node' : ''}"
 			style="margin-left: {level * 20}px; /*background-color: {getNodeColor(node.id)}*/"
@@ -147,7 +144,7 @@
 					{#if hasChildren(node) || hasAnnotations(node)}
 						<button
 							class="mt-1 text-gray-500 hover:text-gray-700"
-							on:click={() => toggleNode(node.id)}
+							onclick={() => toggleNode(node.id)}
 						>
 							{expandedNodes.has(node.id) ? '▼' : '▶'}
 						</button>
@@ -162,9 +159,9 @@
 								</p>
 								<div class="classifier flex-shrink-0">
 									<MetaPointerUI
-										language={node.classifier?.language}
-										key={node.classifier?.key}
-										version={node.classifier?.version}
+										language={node.classifier.language}
+										key={node.classifier.key}
+										version={node.classifier.version}
 									/>
 								</div>
 							</div>
@@ -172,80 +169,34 @@
 							<NodeDetails {node} {handleNodeClick} />
 						</div>
 					{:else}
-						<div class="flex-grow rounded border p-2 max-w-2xl {selectedNodeId === node.id ? 'selected-node' : ''} node-panel-selectable" style="background-color: white" on:click={() => handleNodeClick(node.id)}>
+						<!-- svelte-ignore <a11y_click_events_have_key_events> -->
+						<!-- svelte-ignore <a11y_no_noninteractive_element_interactions> -->
+						<!-- svelte-ignore <a11y_no_static_element_interactions> -->
+						<div class="flex-grow rounded border p-2 max-w-2xl {selectedNodeId === node.id ? 'selected-node' : ''} node-panel-selectable"
+								 style="background-color: white" onclick={() => handleNodeClick(node.id)}>
 							<div class="node-header">
 								<p class="font-medium break-all min-w-0 node-id">🔹 {node.id || 'Unknown'}</p>
 								<div class="classifier flex-shrink-0">
 									<MetaPointerUI
-										language={node.classifier?.language}
-										key={node.classifier?.key}
-										version={node.classifier?.version}
+										language={node.classifier.language}
+										key={node.classifier.key}
+										version={node.classifier.version}
 									/>
 								</div>
 							</div>
-
 							<NodeDetails {node} {handleNodeClick} />
 						</div>
 					{/if}
 				</div>
 			</div>
 			{#if expandedNodes.has(node.id)}
-				<svelte:self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} on:nodeClick {selectedNodeId} />
+				<Self {chunk} {expandedNodes} nodeId={node.id} level={level + 1} {nodeClick} {selectedNodeId} />
 			{/if}
 		</div>
 	{/each}
 </div>
 
 <style>
-	.properties-container {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-	.property-row {
-		display: flex;
-		align-items: center;
-	}
-	.property-key {
-		width: fit-content;
-	}
-	.property-equals {
-		width: 30px;
-		text-align: center;
-		flex: 0 0 auto;
-	}
-	.property-value {
-		width: fit-content;
-		white-space: pre-wrap;
-		font-family: monospace;
-	}
-	.reference-arrow {
-		width: 30px;
-		text-align: center;
-		flex: 0 0 auto;
-		color: #666;
-	}
-	.reference-targets {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-	}
-	.reference-target {
-		background-color: #f0f9ff;
-		border: 1px solid #bae6fd;
-		border-radius: 0.25rem;
-		padding: 0.125rem 0.5rem;
-		font-size: 0.875rem;
-		color: #0369a1;
-	}
-	.reference-link {
-		cursor: pointer;
-		text-decoration: underline;
-		color: #0284c7;
-	}
-	.reference-link:hover {
-		color: #0369a1;
-	}
 	.highlight-node {
 		animation: highlight 2s ease-out;
 	}

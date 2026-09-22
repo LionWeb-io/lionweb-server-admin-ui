@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { RepositoryConfiguration } from '@lionweb/server-shared';
+	import type { DeleteConfirmationProps } from '$lib/components/modals/ModalProps.js';
+	import { TriangleAlertIcon } from "@lucide/svelte"
 
-	export let show: boolean;
-	export let repository: RepositoryConfiguration | null;
-	export let onClose: () => void;
-	export let onConfirm: () => Promise<void>;
+	let { show, repository, onClose, onConfirm} : DeleteConfirmationProps = $props();
+	
 </script>
 
 {#if show}
@@ -27,20 +26,7 @@
 					<div
 						class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10"
 					>
-						<svg
-							class="h-6 w-6 text-red-600"
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-							/>
-						</svg>
+						<TriangleAlertIcon color="red"/>
 					</div>
 					<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
 						<h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
@@ -57,14 +43,14 @@
 				<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
 					<button
 						type="button"
-						on:click={onConfirm}
+						onclick={onConfirm}
 						class="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
 					>
 						Delete
 					</button>
 					<button
 						type="button"
-						on:click={onClose}
+						onclick={onClose}
 						class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
 					>
 						Cancel

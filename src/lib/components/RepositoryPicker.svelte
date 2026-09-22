@@ -1,20 +1,20 @@
 <script lang="ts">
 	import type { RepositoryConfiguration } from '@lionweb/server-shared';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getRepositories } from '$lib/services/repository';
+	import { getRepositories } from '$lib/services/repository.js';
 	import { onMount } from 'svelte';
 
-	let repositories: RepositoryConfiguration[] = [];
-	let isOpen = false;
-	let selected: RepositoryConfiguration | null = null;
+	let repositories: RepositoryConfiguration[] = $state([]);
+	let isOpen = $state(false);
+	let selected: RepositoryConfiguration | null = $state(null);
 
 	onMount(async () => {
 		try {
 			const response = await getRepositories();
 			if (response.success) {
 				repositories = response.repositories;
-				selected = repositories.find(r => r.name === $page.params.repository) || repositories[0];
+				selected = repositories.find(r => r.name === page.params.repository) || repositories[0];
 			}
 		} catch (e) {
 			console.error('Error loading repositories:', e);
@@ -28,12 +28,16 @@
 	function selectOption(option: RepositoryConfiguration) {
 		selected = option;
 		isOpen = false;
+		console.log(`goto ${option.name}`)
 		goto(`/repository/${option.name}`);
 	}
 </script>
 
 <div class="custom-select">
-	<div class="selected" on:click={toggleDropdown}>
+	<!-- svelte-ignore <a11y_click_events_have_key_events> -->
+	<!-- svelte-ignore <a11y_no_noninteractive_element_interactions> -->
+	<!-- svelte-ignore <a11y_no_static_element_interactions> -->
+	<div class="selected" onclick={toggleDropdown}>
 		<div class="option-row">
 			{#if selected}
 				<span class="option-title">{selected.name}</span>
@@ -49,7 +53,9 @@
 	{#if isOpen}
 		<ul class="options">
 			{#each repositories as option}
-				<li class="option-row" on:click={() => selectOption(option)}>
+				<!-- svelte-ignore <a11y_click_events_have_key_events> -->
+				<!-- svelte-ignore <a11y_no_noninteractive_element_interactions> -->
+				<li class="option-row" onclick={() => selectOption(option)}>
 					<span class="option-title">{option.name}</span>
 					<span class="badge version">{option.lionweb_version}</span>
 					<span class="badge history">{option.history ? 'History enabled' : 'No history'}</span>

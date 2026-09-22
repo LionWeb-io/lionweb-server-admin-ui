@@ -1,27 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { loadPartition } from '$lib/services/repository';
+	import { page } from '$app/state';
+	import { loadPartition } from '$lib/services/repository.js';
 	import NodeTree from '$lib/components/NodeTree.svelte';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
-	import type { LionWebJsonChunk } from '@lionweb/server-client';
+	import type { LionWebJsonChunk } from '@lionweb/server-http-client';
 	import NodeNavigation from '$lib/components/NodeNavigation.svelte';
 	import { tick } from 'svelte';
-
-	let repositoryName = $page.params.repository;
-	let nodeId = $page.params.id;
-	let loading = false;
-	let error: string | null = null;
-	let expandedNodes = new Set<string>();
-	let partitionData: LionWebJsonChunk | null = null;
-	let selectedNodeId: string | null = null;
-
-	// React to URL changes
-	$: {
-		repositoryName = $page.params.repository;
-		nodeId = $page.params.id;
-		loadData();
-	}
+  import { SvelteSet } from "svelte/reactivity"
+	
+	let repositoryName = $derived(page.params.repository);
+	let nodeId = $derived(page.params.id);
+	let loading = $state(false);
+	let error: string | null = $state(null);
+	let expandedNodes = $state(new SvelteSet<string>());
+	let partitionData: LionWebJsonChunk | null = $state(null);
+	let selectedNodeId: string | null = $state(null);
 
 	async function loadData() {
 		try {
@@ -39,9 +33,8 @@
 		}
 	}
 
-	function handleNodeClick(event: CustomEvent<{ nodeId: string }>) {
-		const clickedNodeId = event.detail.nodeId;
-		handleNodeSelect(clickedNodeId);
+	function handleNodeClick(nodeId: string) {
+		handleNodeSelect(nodeId);
 	}
 
 	function handleExpandAll() {
@@ -49,12 +42,10 @@
 		partitionData.nodes.forEach(node => {
 			expandedNodes.add(node.id);
 		});
-		expandedNodes = expandedNodes; // Trigger reactivity
 	}
 
 	function handleCollapseAll() {
 		expandedNodes.clear();
-		expandedNodes = expandedNodes; // Trigger reactivity
 	}
 
 	async function handleNodeSelect(nodeId: string) {
@@ -73,7 +64,6 @@
 		ancestors.reverse().forEach(ancestorId => {
 			expandedNodes.add(ancestorId);
 		});
-		expandedNodes = expandedNodes; // Trigger reactivity
 
 		// Wait for the DOM to update
 		await tick();
@@ -93,7 +83,11 @@
 		}
 	}
 
-	onMount(loadData);
+	// Reload partitions if node id changes
+	$effect( () => {
+		const n = nodeId
+		loadData()
+	})
 </script>
 
 <div class="flex min-h-screen bg-white">
@@ -119,7 +113,7 @@
 				<button
 					type="button"
 					class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					on:click={handleExpandAll}
+					onclick={handleExpandAll}
 					title="Expand All"
 				>
 					<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -130,7 +124,7 @@
 				<button
 					type="button"
 					class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-					on:click={handleCollapseAll}
+					onclick={handleCollapseAll}
 					title="Collapse All"
 				>
 					<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -170,8 +164,8 @@
 					<div class="bg-gray-50 rounded-lg p-4 max-h-[calc(100vh-300px)] overflow-y-auto" id="node-tree-container">
 						<NodeTree
 							chunk={partitionData}
-							bind:expandedNodes
-							on:nodeClick={handleNodeClick}
+							expandedNodes={expandedNodes}
+							nodeClick={handleNodeClick}
 							selectedNodeId={selectedNodeId}
 						/>
 					</div>

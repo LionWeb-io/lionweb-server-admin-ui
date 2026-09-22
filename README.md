@@ -20,6 +20,12 @@ You can see this application in action:
 
 This requires you to have Docker and Docker Compose installed.
 
+Install the LionWeb Server image into docker:
+
+```bash
+docker pull ghcr.io/lionweb-io/lionweb-server:release-lionweb-server-0.4.1
+```
+
 If that is the case, you can just type:
 ```
 docker-compose up

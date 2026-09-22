@@ -1,3 +1,3 @@
 export interface Partition {
-	id: string;
+    id: string;
 }

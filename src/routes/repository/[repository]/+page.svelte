@@ -1,36 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import {
 		listPartitionsIDs,
 		loadShallowPartitions,
 		createPartition,
-	} from '$lib/services/repository';
-	import type { LionWebJsonChunk } from '@lionweb/server-client';
+	} from '$lib/services/repository.js';
+	import type { LionWebJsonChunk, LionWebJsonMetaPointer } from '@lionweb/json';
 	import { goto } from '$app/navigation';
-	import type { LionWebJsonMetaPointer } from '@lionweb/json';
 	import PartitionCard from '$lib/components/PartitionCard.svelte';
-	import { getNodeName } from '$lib/utils/noderendering';
+	import { getNodeName } from '$lib/utils/noderendering.js';
+	import { ImageUpIcon, ChevronDownIcon, ChevronUpIcon } from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	type ViewMode = 'chronological' | 'grouped' | 'alphabetical';
-	let viewMode: ViewMode = 'chronological';
-	let collapsedGroups = new Set<string>();
-
-	let repositoryName = $page.params.repository;
 	type PartitionEntry = { id: string; name?: string; isLoaded?: boolean; data?: LionWebJsonChunk; metapointer?: LionWebJsonMetaPointer };
-	let partitions: Array<PartitionEntry> = [];
-	let loading = false;
-	let error: string | null = null;
-	let dragActive = false;
 
-	// React to repository changes
-	$: {
-		repositoryName = $page.params.repository;
-		loadPartitions();
-	}
-
+	let viewMode: ViewMode = $state('chronological');
+	let collapsedGroups = $state(new SvelteSet<string>());
+	let repositoryName = $derived(page.params.repository);
+	let partitions: Array<PartitionEntry> = $state([]);
+	let loading = $state(false);
+	let error: string | null = $state(null);
+	let dragActive = $state(false);
+	
 	// Compute organized partitions based on view mode
-	$: organizedPartitions = organizePartitions(partitions, viewMode);
+	let organizedPartitions = $derived(organizePartitions(partitions, viewMode));
 
 	function organizePartitions(partitions: Array<PartitionEntry>, mode: ViewMode) {
 		switch (mode) {
@@ -194,10 +189,12 @@
 			loading = false;
 		}
 	}
-
-	onMount(async () => {
-		await loadPartitions();
-	});
+	
+	// Reload partitions if repo changes
+	$effect( () => {
+		const newrepo = repositoryName
+		loadPartitions()
+	})
 </script>
 
 <div class="relative min-h-screen">
@@ -210,30 +207,18 @@
 	<div class="rounded-lg bg-white shadow mb-4">
 		<div class="px-4 py-5 sm:p-6">
 			<div
+				role="region"
 				class="rounded-lg border-2 border-dashed p-8 text-center transition-colors duration-200 ease-in-out"
 				class:border-indigo-600={dragActive}
 				class:border-gray-300={!dragActive}
 				class:bg-indigo-50={dragActive}
-				on:dragenter={handleDragEnter}
-				on:dragleave={handleDragLeave}
-				on:dragover={handleDragOver}
-				on:drop={handleDrop}
+				ondragenter={handleDragEnter}
+				ondragleave={handleDragLeave}
+				ondragover={handleDragOver}
+				ondrop={handleDrop}
 			>
 				<div class="text-gray-600">
-					<svg
-						class="mx-auto h-12 w-12 text-gray-400"
-						stroke="currentColor"
-						fill="none"
-						viewBox="0 0 48 48"
-						aria-hidden="true"
-					>
-						<path
-							d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-					</svg>
+					<div  class="inline-flex justify-center items-center"><ImageUpIcon/></div>
 					<p class="mt-2">Drag and drop a LionWeb JSON file here to create a new partition</p>
 					<p class="mt-1 text-sm text-gray-500">
 						The file should contain a valid LionWeb serialization chunk
@@ -280,7 +265,7 @@
 				{#if organizedPartitions.type === 'list'}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{#each organizedPartitions.items as partition}
-							<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
+							<PartitionCard {partition} onClick={handleLoadPartition} deleted={loadPartitions} />
 						{/each}
 					</div>
 				{:else}
@@ -289,38 +274,29 @@
 							<div>
 								<button
 									class="flex items-center justify-between w-full text-left text-lg font-medium text-gray-900 mb-4 hover:text-indigo-600"
-									on:click={() => {
+									onclick={() => {
 										const key = 'mp' in group ? group.mp : group.name;
 										if (collapsedGroups.has(key)) {
 											collapsedGroups.delete(key);
 										} else {
 											collapsedGroups.add(key);
 										}
-										collapsedGroups = collapsedGroups; // Trigger reactivity
 									}}
 								>
 									<div class="flex items-center gap-2">
 										<span>{'mp' in group ? group.mp : group.name}</span>
 										<span class="text-sm text-gray-500">({(group.items || []).length})</span>
 									</div>
-									<svg
-										class="h-5 w-5 transform transition-transform"
-										class:rotate-180={!collapsedGroups.has('mp' in group ? group.mp : group.name)}
-										xmlns="http://www.w3.org/2000/svg"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-									>
-										<path
-											fill-rule="evenodd"
-											d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-											clip-rule="evenodd"
-										/>
-									</svg>
+									{#if !collapsedGroups.has('mp' in group ? group.mp : group.name)}
+										<ChevronUpIcon/>
+										{:else}
+										<ChevronDownIcon/>
+										{/if}
 								</button>
 								{#if !collapsedGroups.has('mp' in group ? group.mp : group.name)}
 									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 										{#each (group.items || []) as partition}
-											<PartitionCard {partition} onClick={handleLoadPartition} on:deleted={loadPartitions} />
+											<PartitionCard {partition} onClick={handleLoadPartition} deleted={loadPartitions} />
 										{/each}
 									</div>
 								{/if}

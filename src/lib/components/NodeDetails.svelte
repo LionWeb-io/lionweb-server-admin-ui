@@ -1,11 +1,9 @@
 <script lang="ts">
-	import type { LionWebJsonNode } from '@lionweb/json';
-
-	export let node: LionWebJsonNode;
-	export let handleNodeClick: (id: string) => void;
-
+	import type { NodeDetailsProps } from '$lib/components/ComponentPropsTypes.js';
 	import MetaPointerUI from './MetaPointerUI.svelte';
-	import { getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering';
+	import { getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering.js';
+
+	let { node, handleNodeClick } : NodeDetailsProps = $props()
 </script>
 
 {#if node.properties?.length || node.references?.length}
@@ -51,12 +49,12 @@
                         <span>{target.resolveInfo}</span>
                       {/if}
 											{#if target.reference}
-                        <span
+                        <button
 													class="reference-link"
-													on:click={() => handleNodeClick(target.reference)}
+													onclick={(ev) => { handleNodeClick(target.reference!); ev.stopPropagation()}}
 												>
                           ({target.reference})
-                        </span>
+                        </button>
                       {/if}
                     </div>
 									{/each}

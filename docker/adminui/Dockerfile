@@ -1,5 +1,5 @@
 # Use an official Node.js image as a base
-FROM node:20 AS builder
+FROM node:24 AS builder
 
 # Set working directory inside the container
 WORKDIR /app
@@ -15,14 +15,14 @@ COPY package.json ./
 COPY . .
 
 # Build the Svelte app
-RUN npm run setup
-RUN rm package-lock.json
+# RUN npm run setup
+# RUN rm package-lock.json
 RUN npm cache clean --force
-RUN npm install
+RUN npm  install
 RUN npm run build
 
 # Use a smaller Node.js image for production
-FROM node:20 AS runner
+FROM node:24 AS runner
 
 # Set working directory inside the container
 WORKDIR /app
@@ -33,7 +33,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.svelte-kit ./.svelte-kit
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/scripts ./scripts
+# COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/svelte.config.js ./svelte.config.js
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/vite.config.ts ./vite.config.ts

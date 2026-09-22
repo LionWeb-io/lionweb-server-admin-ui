@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { listPartitionsIDs, loadPartitionNames } from '$lib/services/repository';
+	import { listPartitionsIDs, loadPartitionNames } from '$lib/services/repository.js';
 	import { onMount } from 'svelte';
 
 	let partitions: Array<{ id: string; name?: string }> = [];
-	let isOpen = false;
-	let selected: { id: string; name?: string } | null = null;
-	let searchQuery = '';
+	let isOpen = $state(false);
+	let selected: { id: string; name?: string } | null = $state(null);
+	let searchQuery = $state('');
 
 	onMount(async () => {
 		try {
-			const repositoryName = $page.params.repository;
+			const repositoryName = page.params.repository;
 			if (!repositoryName) return;
 
 			const partitionIDs = await listPartitionsIDs(repositoryName);
@@ -25,7 +25,7 @@
 			}));
 
 			// Set selected partition based on current URL
-			const currentPartitionId = $page.params.id?.replace('node-', '');
+			const currentPartitionId = page.params.id?.replace('node-', '');
 			if (currentPartitionId) {
 				selected = partitions.find(p => p.id === currentPartitionId) || null;
 			}
@@ -41,10 +41,11 @@
 	function selectOption(partition: { id: string; name?: string }) {
 		selected = partition;
 		isOpen = false;
-		goto(`/repository/${$page.params.repository}/node-${partition.id}`);
+		console.log(`goto ${`node-${partition.id}`}`)
+		goto(`/repository/${page.params.repository}/node-${partition.id}`);
 	}
 
-	$: filteredPartitions = partitions
+	let filteredPartitions = $derived(partitions
 		.filter(p => {
 			const searchLower = searchQuery.toLowerCase();
 			return (p.name?.toLowerCase().includes(searchLower) || p.id.toLowerCase().includes(searchLower));
@@ -53,11 +54,14 @@
 			const nameA = a.name || a.id;
 			const nameB = b.name || b.id;
 			return nameA.localeCompare(nameB);
-		});
+		}));
 </script>
 
 <div class="custom-select">
-	<div class="selected" on:click={toggleDropdown}>
+	<!-- svelte-ignore <a11y_click_events_have_key_events> -->
+	<!-- svelte-ignore <a11y_no_noninteractive_element_interactions> -->
+	<!-- svelte-ignore <a11y_no_static_element_interactions> -->
+	<div class="selected" onclick={toggleDropdown}>
 		<div class="option-row">
 			{#if selected}
 				<span class="option-title">{selected.name || selected.id}</span>
@@ -79,7 +83,10 @@
 		</div>
 		<ul class="options">
 			{#each filteredPartitions as partition}
-				<li class="option-row" on:click={() => selectOption(partition)}>
+				<!-- svelte-ignore <a11y_click_events_have_key_events> -->
+				<!-- svelte-ignore <a11y_no_noninteractive_element_interactions> -->
+				<!-- svelte-ignore <a11y_no_static_element_interactions> -->
+				<li class="option-row" onclick={() => selectOption(partition)}>
 					<span class="option-title">{partition.name || partition.id}</span>
 				</li>
 			{/each}
