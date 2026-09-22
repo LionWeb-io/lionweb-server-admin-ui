@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ClientNode from '$lib/components/ClientNode.svelte';
+	// svelte-ignore 
 	import {
 		SvelteFlow,
 		Controls,

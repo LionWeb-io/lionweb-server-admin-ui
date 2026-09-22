@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MetaPointerUIProps } from '$lib/components/ComponentPropsTypes';
+	import type { MetaPointerUIProps } from '$lib/components/ComponentPropsTypes.js';
 	import LanguageUI from '$lib/components/LanguageUI.svelte';
 
 	let { language, key, version }: MetaPointerUIProps = $props()

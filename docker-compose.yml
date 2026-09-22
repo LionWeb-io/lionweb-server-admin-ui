@@ -9,12 +9,14 @@ services:
       - '5432:5432'
     shm_size: '1g'  # Add this line to increase shared memory size
 
-  model-repository:
-    build: docker/model-repository
-    depends_on:
-      - postgres
-    ports:
-      - '3005:3005'
+
+#  model-repository:
+#    image: lwserver:4.1.5
+#    pull_policy: never
+#    depends_on:
+#      - postgres
+#    ports:
+#      - '3005:3005'
 
   adminui:
     build:
@@ -24,4 +26,4 @@ services:
       - '5173:5173'
     depends_on:
       - postgres
-      - model-repository
+#      - model-repository

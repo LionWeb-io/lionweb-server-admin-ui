@@ -1,34 +1,27 @@
 <script lang="ts">
-
-	import { clients } from '../../deltaclients/clients.svelte.js';
+	import MonitorMessageView from '$lib/components/MonitorMessageView.svelte';
 	import { isFromClient, mmId, Monitor, type MonitorMessage } from '../../deltaclients/monitor.svelte.js';
-
-	console.log("Time Table Grid")
 
 	const monitor = Monitor.getInstance()
 	
-	function a(m: MonitorMessage): boolean {
-		
-		console.log(`RENDER ${m.delta.messageKind} row ${monitor.messageToRow.get(mmId(m))} id is ${mmId(m)}`)
+	function fromClient(m: MonitorMessage): boolean {
 		return isFromClient(m.delta)
 	}
 </script>
 
 
-<div>
-	{monitor.messageToRow.entries().forEach(e => console.log(JSON.stringify(e)))}
-</div>
 <div class="grid container gap-3 rounded-lg bg-gray-100 p-4" >
-	{#each monitor.activeClients.entries() as client}
-		<div class="rounded bg-yellow-200 p-1"
+	{#each monitor.getClients() as client}
+		<div class="rounded bg-yellow-100 p-1 sticky"
 		     style:grid-row={1}
-		     style:grid-column={monitor.clientToColum.get(client[0])}
+				 style:top={0}
+		     style:grid-column={monitor.clientToColum.get(client.id)}
 		>
-			{client[0]}
+			{client.id}
 		</div>
 	{/each}
-	{#each monitor.allMessages as message}
-		{@const commandOrRequest = a(message)}
+	{#each monitor.getMessages() as message}
+		{@const commandOrRequest = fromClient(message)}	
 			{@const row = monitor.messageToRow.get(mmId(message))}
 			{@const color = isFromClient(message.delta) ? "lightblue" : "lightgreen"}
 			<div class="rounded bg-green-200 p-1"
@@ -36,7 +29,9 @@
 			     style:grid-row={row}
 			     style:grid-column={monitor.clientToColum.get(message.clientId)}
 			>
-				{message.delta.messageKind}
+				<MonitorMessageView monitorMessage={message}/>
+<!--				<DeltaDetails delta={message.delta}/>-->
+				<!--{message.delta.messageKind}-->
 			</div>
 	{/each}
 
@@ -47,7 +42,7 @@
     .container {
 				width: 100%;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(250px, 500px));
 				grid-auto-flow: row;
         gap: 4px;
     }

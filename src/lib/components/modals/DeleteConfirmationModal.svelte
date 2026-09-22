@@ -1,6 +1,5 @@
 <script lang="ts">
-	import type { DeleteConfirmationProps } from '$lib/components/modals/ModalProps';
-	import type { RepositoryConfiguration } from '@lionweb/server-shared';
+	import type { DeleteConfirmationProps } from '$lib/components/modals/ModalProps.js';
 	import { TriangleAlertIcon } from "@lucide/svelte"
 
 	let { show, repository, onClose, onConfirm} : DeleteConfirmationProps = $props();

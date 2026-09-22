@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { UploadProgressProps } from '$lib/components/modals/ModalProps';
+	import type { UploadProgressProps } from '$lib/components/modals/ModalProps.js';
 
 	let { show, progress }: UploadProgressProps = $props()
 </script>

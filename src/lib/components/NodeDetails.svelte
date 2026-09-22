@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { NodeDetailsProps } from '$lib/components/ComponentPropsTypes';
+	import type { NodeDetailsProps } from '$lib/components/ComponentPropsTypes.js';
 	import MetaPointerUI from './MetaPointerUI.svelte';
-	import { getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering';
+	import { getReferenceValues, renderPropertyValue } from '$lib/utils/noderendering.js';
 
 	let { node, handleNodeClick } : NodeDetailsProps = $props()
 </script>
@@ -51,7 +51,7 @@
 											{#if target.reference}
                         <button
 													class="reference-link"
-													onclick={(ev) => { handleNodeClick(target.reference); ev.stopPropagation()}}
+													onclick={(ev) => { handleNodeClick(target.reference!); ev.stopPropagation()}}
 												>
                           ({target.reference})
                         </button>

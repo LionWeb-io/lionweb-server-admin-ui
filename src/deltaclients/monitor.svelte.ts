@@ -1,7 +1,7 @@
 import { DeltaClient } from "@lionweb/server-delta-client";
 import {
     type Custom_MonitorStartMonitor, type DeltaEvent, isDeltaAdminRequest, isDeltaAdminResponse, isDeltaCommand, isDeltaEvent,
-    isDeltaMonitor, isDeltaRequest, isDeltaResponse,
+    isDeltaRequest, isDeltaResponse,
     type MessageFromClient,
     type MessageToClient,
     type SignOnRequest
@@ -64,7 +64,7 @@ export function causes(src: MonitorMessage, target: MonitorMessage): boolean {
     return false
 }
 
-export function getId(message: MessageFromClient | MessageToClient): string {
+export function getDeltaId(message: MessageFromClient | MessageToClient): string {
     if (isDeltaResponse(message)) {
         return message.queryId;
     } else if (isDeltaEvent(message)) {
@@ -107,30 +107,27 @@ export class Monitor {
         this.monitorClient.loggingOn = false;
         this.monitorClient.customFunctionOnly = true;
         this.monitorClient.customFunction = (msg: object) => {
+            console.log(`Monitor received '${JSON.stringify(msg)}`)
             if (isMonitorMessage(msg)) {
+                console.error(`Monitor received '${JSON.stringify(msg)}`);
                 const clientId = msg.clientId;
                 const repository = msg.repositoryName;
                 const delta = msg.delta;
                 if (clientId === undefined) {
+                    console.error(`Monitor message with undefined client`)
                     return;
                 }
                 let client = this.activeClients.get(clientId);
                 if (client === undefined) {
-                    console.log(`NEW CLIENT MONITOR ${clientId}`);
+                    console.log(`Monitor: NEW CLIENT  ${clientId}`);
                     client = new Client(clientId, msg.participationId, repository);
                     this.activeClients.set(clientId, client);
                     clients.push(client);
-                    this.clientToColum.set(clientId, this.nextClientColumn++);
                 }
                 client.messages.push(delta);
-                if (isFromClient(msg.delta) ) {
-                    this.messageToRow.set(mmId(msg), this.nextMessageRow++);
-                } else {
-                    this.messageToRow.set(mmId(msg), this.nextMessageRow++);
-                }
-                console.log(`ROW ${msg.clientId}.${msg.delta.messageKind} is ${this.messageToRow.get(mmId(msg))}`)
                 this.allMessages.push(msg);
             } else {
+                console.error(`Monitor received '${JSON.stringify(msg)}`);
                 // ignore non monitor messages
             }
         };
@@ -152,5 +149,55 @@ export class Monitor {
             this.monitorClient.sendRequest(request);
             this.monitorClient.sendMonitorRequest(monitorMessage);
         });
+    }
+
+    getClients(filter: (client: Client) => boolean = (client: Client) =>{ return false}): Client[] {
+        return this.activeClients.entries().map(e => e[1]).toArray();
+    }
+
+    getMessages(filter: (msg: MonitorMessage) => boolean = (msg: MonitorMessage) =>{ return true}): MonitorMessage[] {
+        filter = (msg: MonitorMessage): boolean => {
+            return msg.delta.messageKind !== "SignOnResponse"// && msg.clientId !== "client3"
+        }
+        const result = this.allMessages.filter(msg => filter(msg) === true)
+        let nextClientColumn = 1
+        let nextRow = 2
+        let clientsProcessed: Map<string, Client> = new Map<string, Client>()
+        let previousMessage: MonitorMessage | undefined = undefined
+        result.forEach(msg => {
+            const clientId = msg.clientId
+            const repository = msg.repositoryName
+            const delta = msg.delta
+            let client = this.activeClients.get(clientId);
+            let showingClient = clientsProcessed.get(clientId);
+            if (showingClient === undefined) {
+                clientsProcessed.set(clientId, client!);
+                this.clientToColum.set(clientId, nextClientColumn++);
+            }
+            if (isFromClient(msg.delta)) {
+                console.log(`isfromClient is ${msg.delta.messageKind}`);
+                this.messageToRow.set(mmId(msg), ++nextRow);
+            } else if (isToClient(msg.delta)) {
+                console.log(`isfromServer is ${msg.delta.messageKind}`);
+                const previousMessageKind = previousMessage?.delta?.messageKind;
+                if (previousMessageKind === undefined || (previousMessageKind !== msg.delta.messageKind)) {
+                    console.log(
+                        `++ last is '${previousMessageKind}' new is '${msg.delta.messageKind}' => ${previousMessageKind === undefined || previousMessageKind !== msg.delta.messageKind}`
+                    );
+                    nextRow++;
+                } else {
+                    if (previousMessage !== undefined && getDeltaId(previousMessage?.delta) !== getDeltaId(msg.delta)) {
+                        nextRow++
+                    } else {
+                        nextRow++
+                    }
+                }
+                this.messageToRow.set(mmId(msg), nextRow);
+            } else {
+                console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`)
+            }
+            previousMessage = msg
+        })
+        return result
     }
 }

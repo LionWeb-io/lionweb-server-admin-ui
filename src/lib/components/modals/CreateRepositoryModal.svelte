@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CreateRepositoryProps } from '$lib/components/modals/ModalProps';
+	import type { CreateRepositoryProps } from '$lib/components/modals/ModalProps.js';
 	import type { RepositoryConfiguration } from '@lionweb/server-shared';
 
 	let { show, onClose, onCreate }: CreateRepositoryProps = $props()

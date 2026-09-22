@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { PartitionCardProps } from '$lib/components/ComponentPropsTypes';
-    import type { LionWebJsonChunk } from '@lionweb/server-client';
+    import type { PartitionCardProps } from '$lib/components/ComponentPropsTypes.js';
+    import type { LionWebJsonChunk } from '@lionweb/server-http-client';
     import { page } from '$app/state';
-    import { loadPartition, deletePartition, createPartition } from '$lib/services/repository';
+    import { loadPartition, deletePartition, createPartition } from '$lib/services/repository.js';
   import { Trash2Icon, DownloadIcon, EyeIcon, TriangleAlertIcon } from "@lucide/svelte"
 
     let { partition, onClick, deleted }: PartitionCardProps = $props()

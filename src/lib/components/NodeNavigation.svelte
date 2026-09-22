@@ -1,9 +1,9 @@
 <!-- NodeNavigation.svelte -->
 <script lang="ts">
-	import type { NodeNavigationProps } from '$lib/components/ComponentPropsTypes';
+	import type { NodeNavigationProps } from '$lib/components/ComponentPropsTypes.js';
 	import { writable } from 'svelte/store';
 	import type { LionWebJsonNode } from '@lionweb/json';
-	import { getQualifiedNodeRepresentation, splitQualifiedName } from '$lib/utils/noderendering';
+	import { getQualifiedNodeRepresentation, splitQualifiedName } from '$lib/utils/noderendering.js';
 
 	let { chunk, selectedNodeId = null, onNodeSelect }: NodeNavigationProps = $props()
 	

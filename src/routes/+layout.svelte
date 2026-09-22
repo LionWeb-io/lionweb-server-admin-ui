@@ -12,7 +12,7 @@
 
 	let { children } = $props();
 	
-	let isLargePage = $state(Boolean(page.params.repository && page.params.id) || page.url.pathname === '/playground');
+	let isLargePage = true// $state(Boolean(page.params.repository && page.params.id) || page.url.pathname === '/playground');
 
 	const navbarMenu = [
 		{
@@ -89,7 +89,7 @@
 		</div>
 	</nav>
 
-	<main class={isLargePage ? 'w-full px-2 bg-amber-200' : 'py-6 sm:px-6 lg:px-8 bg-blue-200'}>
+	<main class={isLargePage ? 'w-full px-2 bg-gray-100' : 'py-6 sm:px-6 lg:px-8 bg-blue-200'}>
 		<div class={isLargePage ? 'max-w-screen-3xl mx-auto' : 'mx-auto max-w-7xl px-4 py-6 sm:px-0'}>
 			{@render children?.()}
 		</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ExistingPartitionProps } from '$lib/components/modals/ModalProps';
+	import type { ExistingPartitionProps } from '$lib/components/modals/ModalProps.js';
 
 	let { show, partitionId, onAction}: ExistingPartitionProps = $props()
 

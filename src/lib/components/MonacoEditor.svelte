@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { MonacoEditorProps } from '$lib/components/ComponentPropsTypes';
+    import type { MonacoEditorProps } from '$lib/components/ComponentPropsTypes.js';
 		import { onMount, onDestroy } from 'svelte';
 
     let {
