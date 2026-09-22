@@ -87,21 +87,12 @@ function isMonitorMessage(object: { messageKind: string }): object is MonitorMes
 }
 
 export class Monitor {
+    private static theInstance: Monitor;
     monitorClient: DeltaClient;
     allMessages: MonitorMessage[] = $state([]);
     clientToColum: SvelteMap<string, number> = $state(new SvelteMap<string, number>());
     messageToRow: SvelteMap<string, number> = $state(new SvelteMap<string, number>());
     activeClients: SvelteMap<string, Client> = $state(new SvelteMap<string, Client>());
-
-    private static theInstance: Monitor;
-
-    static getInstance(): Monitor {
-        if (Monitor.theInstance === undefined) {
-            Monitor.theInstance = new Monitor();
-        }
-        return Monitor.theInstance;
-    }
-
     private nextClientColumn = 1;
     private nextMessageRow = 2;
 
@@ -112,7 +103,7 @@ export class Monitor {
         this.monitorClient.customFunction = (msg: object) => {
             console.log(`Monitor received '${JSON.stringify(msg)}`);
             if (isMonitorMessage(msg as unknown as { messageKind: string })) {
-                const message = (msg as unknown as { messageKind: string }) as MonitorMessage
+                const message = msg as unknown as { messageKind: string } as MonitorMessage;
                 // console.error(`Monitor received '${JSON.stringify(message)}`);
                 const clientId = message.clientId;
                 const repository = message.repositoryName;
@@ -153,6 +144,13 @@ export class Monitor {
             this.monitorClient.sendRequest(request);
             this.monitorClient.sendMonitorRequest(monitorMessage);
         });
+    }
+
+    static getInstance(): Monitor {
+        if (Monitor.theInstance === undefined) {
+            Monitor.theInstance = new Monitor();
+        }
+        return Monitor.theInstance;
     }
 
     getClients(): Client[] {
@@ -201,7 +199,7 @@ export class Monitor {
                 }
                 this.messageToRow.set(mmId(msg), nextRow);
                 // TODO: fix this, Custom_Monitor is not recognized yet as a message kind
-            } else if ((msg.delta as unknown as {messageKind: string}).messageKind.startsWith("Custom_Monitor")){
+            } else if ((msg.delta as unknown as { messageKind: string }).messageKind.startsWith("Custom_Monitor")) {
                 // a Custom_Monitor event
             } else {
                 console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`);
