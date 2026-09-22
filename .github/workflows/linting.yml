@@ -17,8 +17,8 @@ jobs:
         run: npm i -g npm@^11
       - name: Install
         run: npm install
-      # disabled for now: gives four incorrect errors that are actually correct
-      # - name: Check
-      #   run: npm run check
+      # disabled for now:
+      # - name: Check finds incorrect imports from xyflow, but they are actually correct
+      # run: npm run check
       - name: Lint Check
         run: npm run lint-check
