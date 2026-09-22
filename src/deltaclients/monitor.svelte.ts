@@ -200,7 +200,8 @@ export class Monitor {
                     }
                 }
                 this.messageToRow.set(mmId(msg), nextRow);
-            } else if (msg.delta.messageKind.startsWith("Custom_Monitor")){
+                // TODO: fix this, Custom_Monitor is not recognized yet as a message kind
+            } else if ((msg.delta as unknown as {messageKind: string}).messageKind.startsWith("Custom_Monitor")){
                 // a Custom_Monitor event
             } else {
                 console.error(`getMessages: incorrect message ${JSON.stringify(msg.delta)}`);
