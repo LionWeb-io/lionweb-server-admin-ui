@@ -15,8 +15,6 @@ jobs:
       # Pin npm to a modern major (fixes optional-deps glitches seen in npm 9.x)
       - name: Upgrade npm
         run: npm i -g npm@^11
-      - name: Setup
-        run: npm run setup
       - name: Install
         run: npm install
       - name: Check

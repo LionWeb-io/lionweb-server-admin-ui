@@ -5,7 +5,6 @@
     "type": "module",
     "scripts": {
         "server": "docker-compose up",
-        "setup": "node scripts/reposetup.js",
         "dev": "echo def from package.json && vite dev",
         "build": "echo build from package.json && vite build",
         "preview": "vite preview",
